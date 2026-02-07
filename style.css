@@ -83,7 +83,7 @@ h3 { /* Estilos para los títulos de tercer nivel (secciones dentro de tarjetas)
     z-index: 1001; /* Siempre por encima de la barra superior */
 }
 
-.sidebar.active { /* Clase que se activa mediante JS para mostrar el menú */
+.sidebar.active { /* Clase que se añade mediante JS para mostrar el menú */
     left: 0; /* Trae el menú al borde visible de la pantalla */
 }
 
@@ -163,7 +163,7 @@ button { /* Estilo general de los botones */
 }
 
 .btn-main { /* Botón principal azul */
-    background-color: rgba(26, 115, 232, 0.85); /* Azul con un poco de transparencia para ir a juego con el diseño */
+    background-color: rgba(26, 115, 232, 0.85); /* Azul con un poco de transparencia para ir a juego */
     color: white; /* Texto blanco */
     font-family: Piedra; /* Fuente decorativa */
     font-size: 1.3rem; /* Letra un poco más grande */
@@ -206,6 +206,14 @@ button { /* Estilo general de los botones */
     align-items: center; /* Alineación vertical perfecta */
     padding: 10px 0; /* Margen arriba y abajo */
     border-bottom: 1px solid rgba(0,0,0,0.05); /* Línea divisoria muy tenue */
+}
+
+.btn-user-select { /* Botones para seleccionar empleado en la nueva vista */
+    background: rgba(255, 255, 255, 0.2); /* Fondo muy suave */
+    color: var(--dark); /* Texto oscuro */
+    margin-bottom: 8px; /* Separación */
+    text-align: left; /* Alineado a la izquierda */
+    border: 1px solid rgba(0,0,0,0.1); /* Borde sutil */
 }
 
 .user-btns { /* Grupo de botones Editar/Borrar */

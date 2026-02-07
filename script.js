@@ -138,19 +138,44 @@ const app = {
 
     // --- SISTEMA DE FICHADO ---
     punch: function(type) {
-        if (!navigator.geolocation) return alert("GPS no disponible"); // Comprueba GPS
-        navigator.geolocation.getCurrentPosition((pos) => { // Pide ubicación
-            this.logs.push({ // Crea registro de fichaje
-                userId: this.currentUser.id, // ID actual
-                userName: this.currentUser.name, // Nombre actual
-                type: type, // Entrada o Salida
-                time: new Date().toLocaleString(), // Hora actual
-                coords: [pos.coords.latitude, pos.coords.longitude] // GPS
-            });
-            this.saveData(); // Guarda
-            this.renderEmployeePanel(); // Actualiza botones
-            alert("Fichaje realizado: " + type); // Notifica
-        }, () => alert("GPS desactivado: actívalo para fichar"));
+        if (!navigator.geolocation) return alert("GPS no disponible en este dispositivo");
+
+        // Pequeño feedback visual
+        const btn = type === 'ENTRADA' ? document.getElementById('btn-in') : document.getElementById('btn-out');
+        const originalText = btn.innerText;
+        btn.innerText = "Obteniendo ubicación...";
+        btn.disabled = true;
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                app.logs.push({
+                    userId: app.currentUser.id,
+                    userName: app.currentUser.name,
+                    type: type,
+                    time: new Date().toLocaleString(),
+                    coords: [pos.coords.latitude, pos.coords.longitude]
+                });
+                app.saveData();
+                app.renderEmployeePanel();
+                btn.innerText = originalText;
+                btn.disabled = false;
+                alert("Fichaje realizado con éxito: " + type);
+            },
+            (err) => {
+                btn.innerText = originalText;
+                btn.disabled = false;
+                let msg = "Error de GPS: ";
+                if(err.code === 1) msg += "Debes permitir el acceso a la ubicación.";
+                else if(err.code === 2) msg += "No se pudo obtener la ubicación.";
+                else msg += "Tiempo de espera agotado.";
+                alert(msg);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
     },
 
     // --- DIBUJADO DE INTERFAZ (RENDERS) ---

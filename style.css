@@ -47,7 +47,6 @@ header { /* Estilo de la barra superior de navegación transparente */
     font-family: Lobster; /* Aplica la fuente decorativa 'Lobster' */
     font-style: italic; /* Pone el texto en cursiva */
     text-decoration: underline; /* Añade un subrayado al título */
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3); /* Mejora la lectura del título sobre el fondo */
 }
 
 h2 { /* Estilos para los títulos de segundo nivel */
@@ -55,7 +54,6 @@ h2 { /* Estilos para los títulos de segundo nivel */
     font-style: italic; /* Aplica el estilo cursivo */
     text-decoration: underline; /* Añade un subrayado al texto */
     text-align: center; /* Centra el texto en la pantalla */
-    text-shadow: 0 1px 2px rgba(255,255,255,0.8); /* Sombra blanca sutil para legibilidad */
 }
 
 h3 { /* Estilos para los títulos de tercer nivel (secciones dentro de tarjetas) */
@@ -63,7 +61,6 @@ h3 { /* Estilos para los títulos de tercer nivel (secciones dentro de tarjetas)
     font-style: italic; /* Aplica estilo cursivo */
     text-decoration: underline; /* Añade un subrayado */
     font-size: 1.5rem; /* Establece un tamaño de letra de 1.5 unidades relativas */
-    text-shadow: 0 1px 2px rgba(255,255,255,0.8); /* Sombra blanca sutil para legibilidad */
 }
 
 #menu-btn { /* Botón tipo "hamburguesa" para abrir el menú */
@@ -127,26 +124,25 @@ h3 { /* Estilos para los títulos de tercer nivel (secciones dentro de tarjetas)
 }
 
 .card { /* La caja principal de contenido (CRISTAL ULTRA TRANSPARENTE) */
-    background: rgba(255, 255, 255, 0.1); /* Blanco con solo 10% de opacidad según pedido */
+    background: rgba(255, 255, 255, 0.1); /* Blanco con solo 10% de opacidad para ver totalmente el fondo */
     backdrop-filter: blur(12px); /* Desenfoque de 12px para que el texto sea legible sobre la foto */
     -webkit-backdrop-filter: blur(12px); /* Versión necesaria para que el desenfoque funcione en iPhone/Safari */
     padding: 15px; /* Espacio interior para que el contenido no toque los bordes */
     border-radius: 12px; /* Esquinas redondeadas */
     margin-bottom: 15px; /* Separación entre cajas */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Sombra marcada para resaltar la caja */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Sombra marcada para que la caja destaque aunque sea transparente */
     border: 1px solid rgba(255, 255, 255, 0.3); /* Borde blanco fino para dar el toque final de cristal */
 }
 
-/* NUEVO: ESTILO PARA FILTROS */
-.filter-row {
+.filter-row { /* Fila para los selectores de mes */
     display: flex; /* Alineación flexible */
-    justify-content: center; /* Centrado horizontal */
-    align-items: center; /* Centrado vertical */
-    gap: 10px; /* Espacio entre elementos */
-    margin-bottom: 10px; /* Separación inferior */
-    background: rgba(255,255,255,0.2); /* Fondo suave */
-    padding: 8px; /* Relleno */
-    border-radius: 8px; /* Redondeado */
+    justify-content: center; /* Centra el contenido horizontalmente */
+    align-items: center; /* Centra el contenido verticalmente */
+    gap: 10px; /* Espacio entre el texto y el input */
+    margin-bottom: 10px; /* Separación con el contenido de abajo */
+    background: rgba(255,255,255,0.1); /* Fondo muy sutil */
+    padding: 10px; /* Relleno interno */
+    border-radius: 8px; /* Esquinas redondeadas */
 }
 
 .logo-icon { /* El icono del reloj de la pantalla de identificación */
@@ -165,7 +161,7 @@ input { /* Campos de texto y contraseñas */
     box-sizing: border-box; /* El padding no ensancha el campo */
     font-size: 1rem; /* Letra de tamaño estándar */
     font-family: Sriracha; /* Fuente manuscrita para los datos */
-    background: rgba(255, 255, 255, 0.8); /* Fondo casi opaco para leer bien lo que se escribe */
+    background: rgba(255, 255, 255, 0.8); /* Fondo casi blanco para que se lea bien lo escrito */
 }
 
 button { /* Estilo general de los botones */
@@ -178,7 +174,7 @@ button { /* Estilo general de los botones */
 }
 
 .btn-main { /* Botón principal azul */
-    background-color: rgba(26, 115, 232, 0.85); /* Azul con un poco de transparencia */
+    background-color: rgba(26, 115, 232, 0.85); /* Azul con un poco de transparencia para ir a juego */
     color: white; /* Texto blanco */
     font-family: Piedra; /* Fuente decorativa */
     font-size: 1.3rem; /* Letra un poco más grande */
@@ -191,8 +187,8 @@ button { /* Estilo general de los botones */
 }
 
 .btn-danger { /* Botón rojo (Borrar/Salida) */
-    background-color: var(--danger); /* Color rojo */
-    color: white; /* Texto blanco */
+    background-color: var(--danger); /* Color fondo rojo */
+    color: white; /* Color de texto blanco */
 }
 
 .btn-secondary { /* Botón gris (Cancelar) */
@@ -220,20 +216,21 @@ button { /* Estilo general de los botones */
     justify-content: space-between; /* Texto a un lado, botones al otro */
     align-items: center; /* Alineación vertical perfecta */
     padding: 10px 10px; /* Margen interno */
-    border-bottom: 1px solid rgba(0,0,0,0.05); /* Línea divisoria tenue */
+    border-bottom: 1px solid rgba(0,0,0,0.05); /* Línea divisoria muy tenue */
     background: rgba(255,255,255,0.2); /* Fondo suave para cada registro */
-    border-radius: 8px; /* Redondeado de fila */
+    border-radius: 8px; /* Redondeado de la fila */
     margin-bottom: 5px; /* Separación entre filas */
     text-align: left; /* Alineado a la izquierda */
 }
 
 .btn-user-select { /* Botones para seleccionar empleado en la nueva vista */
-    background: rgba(255, 255, 255, 0.4); /* Fondo semi-transparente */
+    background: rgba(255, 255, 255, 0.2); /* Fondo muy suave */
     color: var(--dark); /* Texto oscuro */
     margin-bottom: 8px; /* Separación */
     text-align: left; /* Alineado a la izquierda */
     border: 1px solid rgba(0,0,0,0.1); /* Borde sutil */
     padding: 15px; /* Área de toque grande */
+    font-family: Sriracha; /* Fuente manuscrita */
 }
 
 .user-btns { /* Grupo de botones Editar/Borrar */
@@ -244,7 +241,7 @@ button { /* Estilo general de los botones */
 .btn-small { /* Botones de menor tamaño */
     width: auto; /* Solo el ancho necesario para el texto */
     padding: 6px 10px; /* Menos relleno */
-    font-size: 0.7rem; /* Letra muy pequeña */
+    font-size: 0.7rem; /* Letra mínima */
 }
 
 .btn-edit { /* Botón editar azul claro */

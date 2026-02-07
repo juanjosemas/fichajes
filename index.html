@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Horario Pro</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- Librería para generar Excel (SheetJS) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Fuentes decorativas -->
     <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Piedra&family=Sriracha&display=swap" rel="stylesheet">
 </head>
 <body>
 
+    <!-- MENÚ LATERAL -->
     <div id="sidebar" class="sidebar">
         <div class="sidebar-header">
             <h2 id="menu-user-name">Usuario</h2>
@@ -30,8 +32,9 @@
                 <a href="#" onclick="app.downloadBackup()">💾 Guardar Copia Seguridad</a>
                 <a href="#" onclick="document.getElementById('import-file').click()">📂 Restaurar Copia</a>
                 <input type="file" id="import-file" style="display:none" onchange="app.importBackup(event)">
-                <a href="#" onclick="app.generatePDF()">📄 Exportar PDF Mensual</a>
+                <a href="#" onclick="app.generateExcel()">📊 Exportar Excel Mensual</a>
             </div>
+
             <hr>
             <a href="#" onclick="app.logout()" class="logout-link">🚪 Cerrar sesión</a>
         </nav>

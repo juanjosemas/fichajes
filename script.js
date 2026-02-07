@@ -40,7 +40,7 @@ const app = {
         if(viewId === 'view-admin-status') this.renderAdminStatus(); 
         if(viewId === 'view-admin-employees') this.renderAdminUsers(); 
         if(viewId === 'view-admin-logs') this.renderAdminLogs(); 
-        if(viewId === 'view-admin-by-employee') this.renderAdminByEmployee(); // NUEVA VISTA
+        if(viewId === 'view-admin-by-employee') this.renderAdminByEmployee(); 
         if(viewId === 'view-employee') this.renderEmployeePanel(); 
     },
 
@@ -164,7 +164,25 @@ const app = {
         }, { enableHighAccuracy: true });
     },
 
-    // --- LÓGICA DE TIEMPO Y EMPAREJAMIENTO ---
+    // --- GESTIÓN DE REGISTROS (BORRAR) ---
+    deleteLog: function(timestamp, viewToRefresh) {
+        if (confirm("¿Eliminar este registro de fichaje permanentemente?")) {
+            this.logs = this.logs.filter(l => l.timestamp !== timestamp);
+            this.saveData();
+            // Refrescar la vista actual para ver los cambios
+            if (viewToRefresh === 'admin-logs') this.renderAdminLogs();
+            if (viewToRefresh === 'admin-by-employee') {
+                // Si estamos en detalle, necesitamos volver a pintar el detalle del usuario actual
+                const nameInDetail = document.getElementById('detail-employee-name').innerText;
+                const empName = nameInDetail.replace('Jornadas de ', '');
+                const user = this.users.find(u => u.name === empName);
+                if (user) this.viewEmployeeDetail(user.id);
+            }
+            if (viewToRefresh === 'employee-panel') this.renderEmployeePanel();
+        }
+    },
+
+    // --- LÓGICA DE TIEMPO ---
     
     formatDuration: function(ms) {
         if (ms <= 0) return "0m";
@@ -214,7 +232,6 @@ const app = {
 
     // --- RENDERS ---
 
-    // NUEVA: LISTA DE EMPLEADOS PARA SELECCIONAR
     renderAdminByEmployee: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
         document.getElementById('admin-employee-detail-card').style.display = 'none';
@@ -225,7 +242,6 @@ const app = {
         `).join('') || 'No hay empleados registrados.';
     },
 
-    // NUEVA: VER DETALLE DE UN EMPLEADO CONCRETO
     viewEmployeeDetail: function(userId) {
         const user = this.users.find(u => u.id === userId);
         const uLogs = this.logs.filter(l => l.userId === userId);
@@ -234,16 +250,18 @@ const app = {
         document.getElementById('detail-employee-name').innerText = `Jornadas de ${user.name}`;
         document.getElementById('admin-employee-logs-detail').innerHTML = paired.map(p => `
             <div class="user-row" style="flex-direction: column; align-items: flex-start;">
-                <span>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</span>
+                <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+                    <span>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</span>
+                    <div>
+                        ${p.entry ? `<button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp}, 'admin-by-employee')">🗑️ E</button>` : ''}
+                        ${p.exit ? `<button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp}, 'admin-by-employee')">🗑️ S</button>` : ''}
+                    </div>
+                </div>
                 <small>
                     ${p.entry ? 'Entrada: ' + p.entry.time.split(',')[1] : '---'} | 
                     ${p.exit ? 'Salida: ' + p.exit.time.split(',')[1] : 'En curso...'}
                 </small>
                 ${p.exit ? `<b style="color:var(--primary)">Total: ${this.formatDuration(p.duration)}</b>` : ''}
-                <div style="margin-top: 5px;">
-                    ${p.entry ? `<a href="https://maps.google.com/?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem;">📍 Mapa Entrada</a>` : ''}
-                    ${p.exit ? ` | <a href="https://maps.google.com/?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem;">📍 Mapa Salida</a>` : ''}
-                </div>
             </div>
         `).join('') || 'Este empleado no tiene registros.';
         
@@ -309,7 +327,13 @@ const app = {
         const paired = this.getPairedLogs(this.logs);
         document.getElementById('admin-logs-list').innerHTML = paired.map(p => `
             <div class="user-row" style="flex-direction: column; align-items: flex-start;">
-                <div><strong>👤 ${p.userName}</strong></div>
+                <div style="width:100%; display:flex; justify-content:space-between;">
+                    <strong>👤 ${p.userName}</strong>
+                    <div>
+                        ${p.entry ? `<button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp}, 'admin-logs')">🗑️ Entrada</button>` : ''}
+                        ${p.exit ? `<button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp}, 'admin-logs')">🗑️ Salida</button>` : ''}
+                    </div>
+                </div>
                 <div style="font-size: 0.9rem;">
                     📅 ${p.entry ? p.entry.time : 'Sin entrada'} <br>
                     🏁 ${p.exit ? p.exit.time : 'Trabajando ahora...'}

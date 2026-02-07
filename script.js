@@ -6,7 +6,6 @@ const app = {
 
     // FUNCIÓN DE INICIO
     init: function() {
-        // 1. Cargar usuarios de la memoria
         const storedUsers = localStorage.getItem('users'); 
         if (storedUsers) { 
             this.users = JSON.parse(storedUsers); 
@@ -16,32 +15,36 @@ const app = {
             this.users = [{ id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' }]; 
         }
 
-        // 2. Cargar historial de fichajes
         this.logs = JSON.parse(localStorage.getItem('logs')) || []; 
         this.saveData(); 
 
-        // 3. COMPROBAR SI HAY UNA SESIÓN ACTIVA (Persistencia)
+        // Poner mes actual por defecto en los filtros
+        const now = new Date();
+        const monthStr = now.toISOString().substring(0, 7);
+        setTimeout(() => {
+            if(document.getElementById('filter-date-emp')) document.getElementById('filter-date-emp').value = monthStr;
+            if(document.getElementById('filter-date-admin-logs')) document.getElementById('filter-date-admin-logs').value = monthStr;
+            if(document.getElementById('filter-date-admin-detail')) document.getElementById('filter-date-admin-detail').value = monthStr;
+        }, 100);
+
         const savedSession = localStorage.getItem('session');
         if (savedSession) {
-            this.currentUser = JSON.parse(savedSession); // Recupera el usuario
-            this.setupUI(this.currentUser); // Configura la interfaz (menús, etc.)
-            this.nav('view-home'); // Salta directamente al inicio sin pasar por login
+            this.currentUser = JSON.parse(savedSession);
+            this.setupUI(this.currentUser);
+            this.nav('view-home');
         }
     },
 
-    // GUARDAR DATOS EN MEMORIA LOCAL
     saveData: function() {
         localStorage.setItem('users', JSON.stringify(this.users)); 
         localStorage.setItem('logs', JSON.stringify(this.logs)); 
     },
 
-    // CONTROL DEL MENÚ SIDEBAR
     toggleMenu: function() {
         const isActive = document.getElementById('sidebar').classList.toggle('active'); 
         document.getElementById('overlay').style.display = isActive ? 'block' : 'none'; 
     },
 
-    // NAVEGACIÓN ENTRE VISTAS
     nav: function(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
         document.getElementById(viewId).classList.add('active'); 
@@ -54,7 +57,6 @@ const app = {
         if(viewId === 'view-employee') this.renderEmployeePanel(); 
     },
 
-    // SISTEMA DE ACCESO (LOGIN)
     login: function() {
         const u = document.getElementById('login-user').value.trim().toLowerCase(); 
         const p = document.getElementById('login-pass').value.trim(); 
@@ -62,9 +64,7 @@ const app = {
 
         if (user && user.pass === p) { 
             this.currentUser = user; 
-            // GUARDAR SESIÓN EN MEMORIA PARA QUE NO SE CIERRE AL SALIR
             localStorage.setItem('session', JSON.stringify(this.currentUser));
-            
             this.setupUI(user); 
             this.nav('view-home'); 
         } else {
@@ -72,7 +72,6 @@ const app = {
         }
     },
 
-    // CONFIGURACIÓN DE INTERFAZ TRAS LOGIN
     setupUI: function(user) {
         document.getElementById('menu-btn').style.display = 'block'; 
         document.getElementById('menu-user-name').innerText = user.name; 
@@ -82,14 +81,73 @@ const app = {
         document.getElementById('login-pass').value = "";
     },
 
-    // CERRAR SESIÓN
     logout: function() {
         this.currentUser = null; 
-        // ELIMINAR SESIÓN DE LA MEMORIA AL CERRAR VOLUNTARIAMENTE
         localStorage.removeItem('session');
-        
         document.getElementById('menu-btn').style.display = 'none'; 
         this.nav('view-login'); 
+    },
+
+    // --- MEJORA: COPIAS DE SEGURIDAD ---
+    downloadBackup: function() {
+        const data = { users: this.users, logs: this.logs };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Copia_Seguridad_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+    },
+
+    importBackup: function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = JSON.parse(e.target.result);
+            if (confirm("Se sobrescribirán todos los datos. ¿Continuar?")) {
+                this.users = data.users;
+                this.logs = data.logs;
+                this.saveData();
+                location.reload();
+            }
+        };
+        reader.readAsText(file);
+    },
+
+    // --- MEJORA: FILTRADO MENSUAL ---
+    filterLogsByMonth: function(logsArray, inputId) {
+        const filterVal = document.getElementById(inputId).value; // YYYY-MM
+        if (!filterVal) return logsArray;
+        const [year, month] = filterVal.split('-');
+        return logsArray.filter(l => {
+            const dateParts = l.time.split(',')[0].split('/'); // DD/MM/AAAA
+            return dateParts[1] === month && dateParts[2] === year;
+        });
+    },
+
+    // --- MEJORA: EDICIÓN DE LOGS ---
+    editLog: function(timestamp) {
+        const log = this.logs.find(l => l.timestamp === timestamp);
+        if (!log) return;
+        const newTime = prompt("Editar fecha y hora (Ej: DD/MM/AAAA, HH:MM:SS)", log.time);
+        if (newTime) {
+            log.time = newTime;
+            this.saveData();
+            this.refreshCurrentView();
+        }
+    },
+
+    refreshCurrentView: function() {
+        const activeView = document.querySelector('.view.active').id;
+        this.nav(activeView);
+        if(document.getElementById('admin-employee-detail-card').style.display === 'block') this.refreshCurrentDetail();
+    },
+
+    refreshCurrentDetail: function() {
+        const nameInDetail = document.getElementById('detail-employee-name').innerText;
+        const empName = nameInDetail.replace('Jornadas de ', '');
+        const user = this.users.find(u => u.name === empName);
+        if (user) this.viewEmployeeDetail(user.id);
     },
 
     // --- GESTIÓN DE EMPLEADOS ---
@@ -106,18 +164,15 @@ const app = {
                 user.name = nameInput; 
                 user.pass = passInput; 
                 user.id = nameInput.toLowerCase().replace(/\s+/g, ''); 
-                alert("Cambios guardados con éxito");
+                alert("Cambios guardados");
             }
         } else { 
             const newId = nameInput.toLowerCase().replace(/\s+/g, ''); 
-            if (this.users.find(u => u.id === newId)) return alert("Este usuario ya existe"); 
+            if (this.users.find(u => u.id === newId)) return alert("Ya existe"); 
             this.users.push({ id: newId, name: nameInput, role: 'employee', pass: passInput }); 
-            alert("Empleado registrado");
+            alert("Registrado");
         }
-
-        this.saveData(); 
-        this.resetForm(); 
-        this.renderAdminUsers(); 
+        this.saveData(); this.resetForm(); this.renderAdminUsers(); 
     },
 
     editEmployee: function(id) {
@@ -142,243 +197,166 @@ const app = {
     },
 
     deleteEmployee: function(id) {
-        if (confirm("¿Borrar definitivamente este empleado?")) { 
+        if (confirm("¿Borrar definitivamente?")) { 
             this.users = this.users.filter(u => u.id !== id); 
-            this.saveData(); 
-            this.renderAdminUsers(); 
+            this.saveData(); this.renderAdminUsers(); 
         }
     },
 
     // --- SISTEMA DE FICHADO ---
     punch: function(type) {
         if (!navigator.geolocation) return alert("GPS no disponible");
-
         const btn = type === 'ENTRADA' ? document.getElementById('btn-in') : document.getElementById('btn-out');
         const originalText = btn.innerText;
-        btn.innerText = "Obteniendo ubicación...";
-        btn.disabled = true;
+        btn.innerText = "Ubicando..."; btn.disabled = true;
 
         navigator.geolocation.getCurrentPosition((pos) => {
             const now = new Date();
             this.logs.push({
-                userId: this.currentUser.id,
-                userName: this.currentUser.name,
-                type: type,
-                time: now.toLocaleString(),
-                timestamp: now.getTime(),
+                userId: this.currentUser.id, userName: this.currentUser.name,
+                type: type, time: now.toLocaleString(), timestamp: now.getTime(),
                 coords: [pos.coords.latitude, pos.coords.longitude]
             });
-            this.saveData();
-            this.renderEmployeePanel();
-            btn.innerText = originalText;
-            btn.disabled = false;
-            alert("Fichaje realizado: " + type);
+            this.saveData(); this.renderEmployeePanel();
+            btn.innerText = originalText; btn.disabled = false;
+            alert("Fichaje OK: " + type);
         }, (err) => {
-            btn.innerText = originalText;
-            btn.disabled = false;
-            alert("Error de GPS: Asegúrate de tenerlo activado.");
+            btn.innerText = originalText; btn.disabled = false; alert("Error GPS");
         }, { enableHighAccuracy: true });
     },
 
-    // --- GESTIÓN DE REGISTROS (BORRAR) ---
     deleteLog: function(timestamp, viewToRefresh) {
-        if (confirm("¿Eliminar este registro de fichaje permanentemente?")) {
+        if (confirm("¿Eliminar permanentemente?")) {
             this.logs = this.logs.filter(l => l.timestamp !== timestamp);
             this.saveData();
             if (viewToRefresh === 'admin-logs') this.renderAdminLogs();
-            if (viewToRefresh === 'admin-by-employee') {
-                const nameInDetail = document.getElementById('detail-employee-name').innerText;
-                const empName = nameInDetail.replace('Jornadas de ', '');
-                const user = this.users.find(u => u.name === empName);
-                if (user) this.viewEmployeeDetail(user.id);
-            }
+            if (viewToRefresh === 'admin-by-employee') this.refreshCurrentDetail();
             if (viewToRefresh === 'employee-panel') this.renderEmployeePanel();
         }
     },
 
-    // --- LÓGICA DE TIEMPO ---
     formatDuration: function(ms) {
         if (ms <= 0) return "0m";
         const totalMinutes = Math.floor(ms / 60000);
-        const hours = Math.floor(totalMinutes / 60) ;
-        const minutes = totalMinutes % 60;
-        return (hours > 0 ? hours + "h " : "") + minutes + "m";
+        return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`;
     },
 
     getPairedLogs: function(logsToProcess) {
         const sorted = [...logsToProcess].sort((a, b) => a.timestamp - b.timestamp);
-        const paired = [];
-        const openEntradas = {}; 
+        const paired = []; const openEntradas = {}; 
 
         sorted.forEach(log => {
-            if (log.type === 'ENTRADA') {
-                openEntradas[log.userId] = log;
-            } else if (log.type === 'SALIDA') {
+            if (log.type === 'ENTRADA') openEntradas[log.userId] = log;
+            else if (log.type === 'SALIDA') {
                 const entry = openEntradas[log.userId];
-                if (entry) {
-                    paired.push({
-                        userName: log.userName,
-                        userId: log.userId,
-                        entry: entry,
-                        exit: log,
-                        duration: log.timestamp - entry.timestamp
-                    });
-                    delete openEntradas[log.userId];
-                } else {
-                    paired.push({ userName: log.userName, exit: log, entry: null, duration: 0 });
-                }
+                paired.push({ userName: log.userName, userId: log.userId, entry: entry || null, exit: log, duration: entry ? log.timestamp - entry.timestamp : 0 });
+                delete openEntradas[log.userId];
             }
         });
-
-        for (let id in openEntradas) {
-            paired.push({
-                userName: openEntradas[id].userName,
-                userId: openEntradas[id].userId,
-                entry: openEntradas[id],
-                exit: null,
-                duration: 0
-            });
-        }
-
+        for (let id in openEntradas) paired.push({ userName: openEntradas[id].userName, userId: openEntradas[id].userId, entry: openEntradas[id], exit: null, duration: 0 });
         return paired.reverse(); 
     },
 
     // --- RENDERS ---
-
     renderAdminByEmployee: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
         document.getElementById('admin-employee-detail-card').style.display = 'none';
         document.getElementById('admin-select-employee-list').innerHTML = emps.map(u => `
-            <button class="btn-user-select" onclick="app.viewEmployeeDetail('${u.id}')">
-                👤 ${u.name} <small>(ID: ${u.id})</small>
-            </button>
-        `).join('') || 'No hay empleados registrados.';
+            <button class="btn-user-select" onclick="app.viewEmployeeDetail('${u.id}')">👤 ${u.name}</button>
+        `).join('') || 'No hay empleados.';
     },
 
     viewEmployeeDetail: function(userId) {
         const user = this.users.find(u => u.id === userId);
         const uLogs = this.logs.filter(l => l.userId === userId);
-        const paired = this.getPairedLogs(uLogs);
+        const filtered = this.filterLogsByMonth(uLogs, 'filter-date-admin-detail');
+        const paired = this.getPairedLogs(filtered);
         
         document.getElementById('detail-employee-name').innerText = `Jornadas de ${user.name}`;
         document.getElementById('admin-employee-logs-detail').innerHTML = paired.map(p => `
-            <div class="user-row" style="flex-direction: column; align-items: flex-start;">
-                <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
-                    <span>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</span>
+            <div class="user-row" style="flex-direction: column;">
+                <div style="width:100%; display:flex; justify-content:space-between;">
+                    <b>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</b>
                     <div>
-                        ${p.entry ? `<button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp}, 'admin-by-employee')">🗑️ E</button>` : ''}
-                        ${p.exit ? `<button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp}, 'admin-by-employee')">🗑️ S</button>` : ''}
+                        ${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️ E</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp}, 'admin-by-employee')">🗑️</button>` : ''}
+                        ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️ S</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp}, 'admin-by-employee')">🗑️</button>` : ''}
                     </div>
                 </div>
-                <small>
-                    ${p.entry ? 'Entrada: ' + p.entry.time.split(',')[1] : '---'} | 
-                    ${p.exit ? 'Salida: ' + p.exit.time.split(',')[1] : 'En curso...'}
-                </small>
-                ${p.exit ? `<b style="color:var(--primary)">Total: ${this.formatDuration(p.duration)}</b>` : ''}
+                <small>${p.entry ? 'E: ' + p.entry.time.split(',')[1] : '--'} | ${p.exit ? 'S: ' + p.exit.time.split(',')[1] : 'En curso'}</small>
+                ${p.exit && p.entry ? `<b style="color:var(--primary)">Total: ${this.formatDuration(p.duration)}</b>` : ''}
             </div>
-        `).join('') || 'Este empleado no tiene registros.';
-        
+        `).join('') || 'Sin registros.';
         document.getElementById('admin-employee-detail-card').style.display = 'block';
-        window.scrollTo(0, document.getElementById('admin-employee-detail-card').offsetTop);
     },
 
     renderAdminStatus: function() {
-        const listDiv = document.getElementById('admin-status-list');
         const emps = this.users.filter(u => u.role !== 'admin');
-        listDiv.innerHTML = emps.map(u => {
+        document.getElementById('admin-status-list').innerHTML = emps.map(u => {
             const uLogs = this.logs.filter(l => l.userId === u.id);
-            const lastLog = uLogs[uLogs.length - 1];
-            const isWorking = lastLog && lastLog.type === 'ENTRADA';
-            return `
-                <div class="status-item ${isWorking ? 'status-working' : 'status-out'}">
-                    <b>${u.name}</b>: ${isWorking ? 'TRABAJANDO' : 'FUERA'} <br>
-                    <small>Último: ${lastLog ? lastLog.time : 'Sin actividad'}</small>
-                </div>
-            `;
+            const isWorking = uLogs.length > 0 && uLogs[uLogs.length-1].type === 'ENTRADA';
+            return `<div class="status-item ${isWorking ? 'status-working' : 'status-out'}"><b>${u.name}</b>: ${isWorking ? 'TRABAJANDO' : 'FUERA'}</div>`;
         }).join('');
     },
 
     renderEmployeePanel: function() {
         const uLogs = this.logs.filter(l => l.userId === this.currentUser.id);
-        const paired = this.getPairedLogs(uLogs);
+        const filtered = this.filterLogsByMonth(uLogs, 'filter-date-emp');
+        const paired = this.getPairedLogs(filtered);
+        const isWorking = uLogs.length > 0 && uLogs[uLogs.length-1].type === 'ENTRADA';
         
-        const isWorking = uLogs.length > 0 && uLogs[uLogs.length - 1].type === 'ENTRADA';
-        const badge = document.getElementById('status-badge');
-        badge.innerText = isWorking ? 'TRABAJANDO' : 'FUERA DE JORNADA';
-        badge.style.background = isWorking ? 'var(--success)' : 'var(--danger)';
-        
-        document.getElementById('emp-status-text').innerText = isWorking ? `En curso desde: ${uLogs[uLogs.length - 1].time.split(',')[1]}` : 'Pulsa para iniciar';
+        document.getElementById('status-badge').innerText = isWorking ? 'TRABAJANDO' : 'FUERA';
+        document.getElementById('status-badge').style.background = isWorking ? 'var(--success)' : 'var(--danger)';
         document.getElementById('btn-in').style.display = isWorking ? 'none' : 'block';
         document.getElementById('btn-out').style.display = isWorking ? 'block' : 'none';
         
-        document.getElementById('emp-history').innerHTML = paired.slice(0, 5).map(p => `
-            <div class="user-row" style="flex-direction: column; align-items: flex-start;">
+        document.getElementById('emp-history').innerHTML = paired.map(p => `
+            <div class="user-row" style="flex-direction: column;">
                 <span>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</span>
-                <small>
-                    ${p.entry ? 'Entrada: ' + p.entry.time.split(',')[1] : '---'} | 
-                    ${p.exit ? 'Salida: ' + p.exit.time.split(',')[1] : 'En curso...'}
-                </small>
-                ${p.exit ? `<b style="color:var(--primary)">Total: ${this.formatDuration(p.duration)}</b>` : ''}
+                <small>${p.entry ? 'Ent: '+p.entry.time.split(',')[1] : '--'} | ${p.exit ? 'Sal: '+p.exit.time.split(',')[1] : '...'}</small>
+                ${p.exit && p.entry ? `<b style="color:var(--primary)">Total: ${this.formatDuration(p.duration)}</b>` : ''}
             </div>
-        `).join('');
+        `).join('') || 'Sin registros.';
     },
 
     renderAdminUsers: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
         document.getElementById('admin-users-list').innerHTML = emps.map(u => `
             <div class="user-row">
-                <div class="user-info"><b>${u.name}</b><br><small>id: ${u.id} | clave: ${u.pass}</small></div>
-                <div class="user-btns">
-                    <button class="btn-small btn-edit" onclick="app.editEmployee('${u.id}')">editar</button>
-                    <button class="btn-small btn-del" onclick="app.deleteEmployee('${u.id}')">borrar</button>
-                </div>
+                <div><b>${u.name}</b><br><small>${u.id}</small></div>
+                <div class="user-btns"><button class="btn-small btn-edit" onclick="app.editEmployee('${u.id}')">E</button><button class="btn-small btn-del" onclick="app.deleteEmployee('${u.id}')">X</button></div>
             </div>
-        `).join('') || 'No hay empleados.';
+        `).join('');
     },
 
     renderAdminLogs: function() {
-        const paired = this.getPairedLogs(this.logs);
+        const filtered = this.filterLogsByMonth(this.logs, 'filter-date-admin-logs');
+        const paired = this.getPairedLogs(filtered);
         document.getElementById('admin-logs-list').innerHTML = paired.map(p => `
-            <div class="user-row" style="flex-direction: column; align-items: flex-start;">
+            <div class="user-row" style="flex-direction: column;">
                 <div style="width:100%; display:flex; justify-content:space-between;">
                     <strong>👤 ${p.userName}</strong>
                     <div>
-                        ${p.entry ? `<button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp}, 'admin-logs')">🗑️ Entrada</button>` : ''}
-                        ${p.exit ? `<button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp}, 'admin-logs')">🗑️ Salida</button>` : ''}
+                        ${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp}, 'admin-logs')">🗑️ E</button>` : ''}
+                        ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp}, 'admin-logs')">🗑️ S</button>` : ''}
                     </div>
                 </div>
-                <div style="font-size: 0.9rem;">
-                    📅 ${p.entry ? p.entry.time : 'Sin entrada'} <br>
-                    🏁 ${p.exit ? p.exit.time : 'Trabajando ahora...'}
-                </div>
-                ${p.exit && p.entry ? `<div style="color:var(--success); font-weight:bold;">⏱️ Tiempo: ${this.formatDuration(p.duration)}</div>` : ''}
+                <small>📅 ${p.entry ? p.entry.time : '--'} | 🏁 ${p.exit ? p.exit.time : 'En curso'}</small>
+                ${p.exit && p.entry ? `<b style="color:var(--success)">⏱️ Tiempo: ${this.formatDuration(p.duration)}</b>` : ''}
             </div>
         `).join('') || 'Sin registros.';
     },
 
     generatePDF: function() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.text("Informe de Jornadas Detallado", 14, 15);
-        
+        const { jsPDF } = window.jspdf; const doc = new jsPDF();
+        doc.text("Informe de Jornadas", 14, 15);
         const logsToUse = this.currentUser.role === 'admin' ? this.logs : this.logs.filter(l => l.userId === this.currentUser.id);
-        const paired = this.getPairedLogs(logsToUse);
-        
-        const data = paired.map(p => [
-            p.userName, 
-            p.entry ? p.entry.time : '---', 
-            p.exit ? p.exit.time : 'En curso', 
-            p.exit ? this.formatDuration(p.duration) : '---'
-        ]);
-
-        doc.autoTable({ 
-            head: [['Empleado', 'Entrada', 'Salida', 'Total']], 
-            body: data, 
-            startY: 20 
-        });
-        doc.save(`jornadas_${this.currentUser.id}.pdf`);
+        const filterId = this.currentUser.role === 'admin' ? 'filter-date-admin-logs' : 'filter-date-emp';
+        const filtered = this.filterLogsByMonth(logsToUse, filterId);
+        const paired = this.getPairedLogs(filtered);
+        const data = paired.map(p => [p.userName, p.entry?p.entry.time:'--', p.exit?p.exit.time:'--', p.exit?this.formatDuration(p.duration):'--']);
+        doc.autoTable({ head: [['Empleado', 'Entrada', 'Salida', 'Total']], body: data, startY: 20 });
+        doc.save(`Informe_${document.getElementById(filterId).value}.pdf`);
     }
 };
 
-// ARRANQUE
 window.onload = () => app.init();

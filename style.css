@@ -47,6 +47,7 @@ header { /* Estilo de la barra superior de navegación transparente */
     font-family: Lobster; /* Aplica la fuente decorativa 'Lobster' */
     font-style: italic; /* Pone el texto en cursiva */
     text-decoration: underline; /* Añade un subrayado al título */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3); /* Mejora la lectura del título sobre el fondo */
 }
 
 h2 { /* Estilos para los títulos de segundo nivel */
@@ -54,6 +55,7 @@ h2 { /* Estilos para los títulos de segundo nivel */
     font-style: italic; /* Aplica el estilo cursivo */
     text-decoration: underline; /* Añade un subrayado al texto */
     text-align: center; /* Centra el texto en la pantalla */
+    text-shadow: 0 1px 2px rgba(255,255,255,0.8); /* Sombra blanca sutil para legibilidad */
 }
 
 h3 { /* Estilos para los títulos de tercer nivel (secciones dentro de tarjetas) */
@@ -61,6 +63,7 @@ h3 { /* Estilos para los títulos de tercer nivel (secciones dentro de tarjetas)
     font-style: italic; /* Aplica estilo cursivo */
     text-decoration: underline; /* Añade un subrayado */
     font-size: 1.5rem; /* Establece un tamaño de letra de 1.5 unidades relativas */
+    text-shadow: 0 1px 2px rgba(255,255,255,0.8); /* Sombra blanca sutil para legibilidad */
 }
 
 #menu-btn { /* Botón tipo "hamburguesa" para abrir el menú */
@@ -124,14 +127,26 @@ h3 { /* Estilos para los títulos de tercer nivel (secciones dentro de tarjetas)
 }
 
 .card { /* La caja principal de contenido (CRISTAL ULTRA TRANSPARENTE) */
-    background: rgba(255, 255, 255, 0.1); /* Blanco con solo 10% de opacidad para ver totalmente el fondo */
+    background: rgba(255, 255, 255, 0.1); /* Blanco con solo 10% de opacidad según pedido */
     backdrop-filter: blur(12px); /* Desenfoque de 12px para que el texto sea legible sobre la foto */
     -webkit-backdrop-filter: blur(12px); /* Versión necesaria para que el desenfoque funcione en iPhone/Safari */
     padding: 15px; /* Espacio interior para que el contenido no toque los bordes */
     border-radius: 12px; /* Esquinas redondeadas */
     margin-bottom: 15px; /* Separación entre cajas */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Sombra marcada para que la caja destaque aunque sea transparente */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Sombra marcada para resaltar la caja */
     border: 1px solid rgba(255, 255, 255, 0.3); /* Borde blanco fino para dar el toque final de cristal */
+}
+
+/* NUEVO: ESTILO PARA FILTROS */
+.filter-row {
+    display: flex; /* Alineación flexible */
+    justify-content: center; /* Centrado horizontal */
+    align-items: center; /* Centrado vertical */
+    gap: 10px; /* Espacio entre elementos */
+    margin-bottom: 10px; /* Separación inferior */
+    background: rgba(255,255,255,0.2); /* Fondo suave */
+    padding: 8px; /* Relleno */
+    border-radius: 8px; /* Redondeado */
 }
 
 .logo-icon { /* El icono del reloj de la pantalla de identificación */
@@ -150,7 +165,7 @@ input { /* Campos de texto y contraseñas */
     box-sizing: border-box; /* El padding no ensancha el campo */
     font-size: 1rem; /* Letra de tamaño estándar */
     font-family: Sriracha; /* Fuente manuscrita para los datos */
-    background: rgba(255, 255, 255, 0.6); /* Fondo semi-transparente para los propios campos */
+    background: rgba(255, 255, 255, 0.8); /* Fondo casi opaco para leer bien lo que se escribe */
 }
 
 button { /* Estilo general de los botones */
@@ -163,7 +178,7 @@ button { /* Estilo general de los botones */
 }
 
 .btn-main { /* Botón principal azul */
-    background-color: rgba(26, 115, 232, 0.85); /* Azul con un poco de transparencia para ir a juego */
+    background-color: rgba(26, 115, 232, 0.85); /* Azul con un poco de transparencia */
     color: white; /* Texto blanco */
     font-family: Piedra; /* Fuente decorativa */
     font-size: 1.3rem; /* Letra un poco más grande */
@@ -204,16 +219,21 @@ button { /* Estilo general de los botones */
     display: flex; /* Elementos en línea horizontal */
     justify-content: space-between; /* Texto a un lado, botones al otro */
     align-items: center; /* Alineación vertical perfecta */
-    padding: 10px 0; /* Margen arriba y abajo */
-    border-bottom: 1px solid rgba(0,0,0,0.05); /* Línea divisoria muy tenue */
+    padding: 10px 10px; /* Margen interno */
+    border-bottom: 1px solid rgba(0,0,0,0.05); /* Línea divisoria tenue */
+    background: rgba(255,255,255,0.2); /* Fondo suave para cada registro */
+    border-radius: 8px; /* Redondeado de fila */
+    margin-bottom: 5px; /* Separación entre filas */
+    text-align: left; /* Alineado a la izquierda */
 }
 
 .btn-user-select { /* Botones para seleccionar empleado en la nueva vista */
-    background: rgba(255, 255, 255, 0.2); /* Fondo muy suave */
+    background: rgba(255, 255, 255, 0.4); /* Fondo semi-transparente */
     color: var(--dark); /* Texto oscuro */
     margin-bottom: 8px; /* Separación */
     text-align: left; /* Alineado a la izquierda */
     border: 1px solid rgba(0,0,0,0.1); /* Borde sutil */
+    padding: 15px; /* Área de toque grande */
 }
 
 .user-btns { /* Grupo de botones Editar/Borrar */
@@ -223,8 +243,8 @@ button { /* Estilo general de los botones */
 
 .btn-small { /* Botones de menor tamaño */
     width: auto; /* Solo el ancho necesario para el texto */
-    padding: 6px 12px; /* Menos relleno */
-    font-size: 0.7rem; /* Letra mínima */
+    padding: 6px 10px; /* Menos relleno */
+    font-size: 0.7rem; /* Letra muy pequeña */
 }
 
 .btn-edit { /* Botón editar azul claro */
@@ -265,6 +285,6 @@ button { /* Estilo general de los botones */
 }
 
 @keyframes logo { /* Definición de la animación del logo */
-    from { opacity: 0; transform: scale(0.5) rotate(0deg); } /* Aparece desde pequeño, invisible y sin rotar */
-    to { opacity: 1; transform: scale(1) rotate(1440deg); } /* Termina en tamaño real, visible y con varias vueltas */
+    from { opacity: 0; transform: scale(0.5) rotate(0deg); }
+    to { opacity: 1; transform: scale(1) rotate(1440deg); }
 }

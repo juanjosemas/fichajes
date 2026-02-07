@@ -6,37 +6,47 @@ const app = {
 
     // FUNCIÓN DE INICIO
     init: function() {
-        const storedUsers = localStorage.getItem('users'); // Busca usuarios en memoria
-        if (storedUsers) { // Si existen datos guardados
-            this.users = JSON.parse(storedUsers); // Los carga
-            const admin = this.users.find(u => u.id === 'admin'); // Verifica al administrador
-            if (admin && !admin.pass) admin.pass = 'admin123'; // Asegura clave de administrador
-        } else { // Si es la primera vez que se abre la app
-            this.users = [{ id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' }]; // Crea al administrador
+        // 1. Cargar usuarios de la memoria
+        const storedUsers = localStorage.getItem('users'); 
+        if (storedUsers) { 
+            this.users = JSON.parse(storedUsers); 
+            const admin = this.users.find(u => u.id === 'admin'); 
+            if (admin && !admin.pass) admin.pass = 'admin123'; 
+        } else { 
+            this.users = [{ id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' }]; 
         }
-        this.logs = JSON.parse(localStorage.getItem('logs')) || []; // Carga el historial
-        this.saveData(); // Guarda la configuración inicial
+
+        // 2. Cargar historial de fichajes
+        this.logs = JSON.parse(localStorage.getItem('logs')) || []; 
+        this.saveData(); 
+
+        // 3. COMPROBAR SI HAY UNA SESIÓN ACTIVA (Persistencia)
+        const savedSession = localStorage.getItem('session');
+        if (savedSession) {
+            this.currentUser = JSON.parse(savedSession); // Recupera el usuario
+            this.setupUI(this.currentUser); // Configura la interfaz (menús, etc.)
+            this.nav('view-home'); // Salta directamente al inicio sin pasar por login
+        }
     },
 
     // GUARDAR DATOS EN MEMORIA LOCAL
     saveData: function() {
-        localStorage.setItem('users', JSON.stringify(this.users)); // Convierte lista a texto y guarda
-        localStorage.setItem('logs', JSON.stringify(this.logs)); // Convierte historial a texto y guarda
+        localStorage.setItem('users', JSON.stringify(this.users)); 
+        localStorage.setItem('logs', JSON.stringify(this.logs)); 
     },
 
     // CONTROL DEL MENÚ SIDEBAR
     toggleMenu: function() {
-        const isActive = document.getElementById('sidebar').classList.toggle('active'); // Mueve el sidebar
-        document.getElementById('overlay').style.display = isActive ? 'block' : 'none'; // Muestra u oculta la sombra
+        const isActive = document.getElementById('sidebar').classList.toggle('active'); 
+        document.getElementById('overlay').style.display = isActive ? 'block' : 'none'; 
     },
 
     // NAVEGACIÓN ENTRE VISTAS
     nav: function(viewId) {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); // Oculta todas las secciones
-        document.getElementById(viewId).classList.add('active'); // Muestra la sección pedida
-        if (document.getElementById('sidebar').classList.contains('active')) this.toggleMenu(); // Cierra el menú si está abierto
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
+        document.getElementById(viewId).classList.add('active'); 
+        if (document.getElementById('sidebar').classList.contains('active')) this.toggleMenu(); 
         
-        // Actualiza datos según la sección cargada
         if(viewId === 'view-admin-status') this.renderAdminStatus(); 
         if(viewId === 'view-admin-employees') this.renderAdminUsers(); 
         if(viewId === 'view-admin-logs') this.renderAdminLogs(); 
@@ -52,6 +62,9 @@ const app = {
 
         if (user && user.pass === p) { 
             this.currentUser = user; 
+            // GUARDAR SESIÓN EN MEMORIA PARA QUE NO SE CIERRE AL SALIR
+            localStorage.setItem('session', JSON.stringify(this.currentUser));
+            
             this.setupUI(user); 
             this.nav('view-home'); 
         } else {
@@ -72,6 +85,9 @@ const app = {
     // CERRAR SESIÓN
     logout: function() {
         this.currentUser = null; 
+        // ELIMINAR SESIÓN DE LA MEMORIA AL CERRAR VOLUNTARIAMENTE
+        localStorage.removeItem('session');
+        
         document.getElementById('menu-btn').style.display = 'none'; 
         this.nav('view-login'); 
     },
@@ -169,10 +185,8 @@ const app = {
         if (confirm("¿Eliminar este registro de fichaje permanentemente?")) {
             this.logs = this.logs.filter(l => l.timestamp !== timestamp);
             this.saveData();
-            // Refrescar la vista actual para ver los cambios
             if (viewToRefresh === 'admin-logs') this.renderAdminLogs();
             if (viewToRefresh === 'admin-by-employee') {
-                // Si estamos en detalle, necesitamos volver a pintar el detalle del usuario actual
                 const nameInDetail = document.getElementById('detail-employee-name').innerText;
                 const empName = nameInDetail.replace('Jornadas de ', '');
                 const user = this.users.find(u => u.name === empName);
@@ -183,7 +197,6 @@ const app = {
     },
 
     // --- LÓGICA DE TIEMPO ---
-    
     formatDuration: function(ms) {
         if (ms <= 0) return "0m";
         const totalMinutes = Math.floor(ms / 60000);

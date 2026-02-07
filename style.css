@@ -1,0 +1,262 @@
+:root { /* Definición de variables globales para mantener la consistencia de colores en toda la app */
+    --primary: #1a73e8; /* Color azul principal utilizado para botones y elementos destacados */
+    --success: #00c853; /* Color verde utilizado para indicar estados positivos o acciones de entrada */
+    --danger: #d32f2f; /* Color rojo utilizado para indicar alertas, errores o acciones de salida */
+    --dark: #202124; /* Color gris muy oscuro para el fondo de menús y textos principales */
+    --bg: #f8f9fa; /* Color gris muy claro para el fondo general de la aplicación */
+}
+
+body { /* Estilos generales para el cuerpo del documento */
+    font-family: -apple-system, sans-serif; /* Define una fuente limpia, similar a la de los sistemas operativos móviles */
+    margin: 0; /* Elimina los márgenes externos predeterminados del navegador */
+    background-color: var(--bg); /* Aplica el color gris claro de reserva si la imagen no carga */
+    color: var(--dark); /* Establece el color de texto principal como gris oscuro */
+    overflow-x: hidden; /* Evita que aparezca una barra de desplazamiento horizontal si algo sobresale */
+    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)), url('img/construccion.jpg'); /* Capa de color suave y la imagen de fondo de construcción */
+    background-repeat: no-repeat; /* Evita que la imagen se repita si la pantalla es muy grande */
+    background-position: center center; /* Centra la imagen de fondo tanto horizontal como verticalmente */
+    background-attachment: fixed; /* Hace que la imagen se quede quieta mientras el contenido se desliza sobre ella */
+    background-size: cover; /* Ajusta la imagen para que cubra siempre toda la pantalla sin dejar huecos */
+}
+
+header { /* Estilo de la barra superior de navegación transparente */
+    background: rgba(26, 115, 232, 0.6); /* Azul corporativo con un 60% de transparencia */
+    backdrop-filter: blur(10px); /* Efecto de desenfoque cristalino para ver el fondo con elegancia */
+    -webkit-backdrop-filter: blur(10px); /* Soporte de desenfoque para navegadores Safari e iOS */
+    color: white; /* Define el color de los textos dentro del header como blanco */
+    height: 60px; /* Establece una altura fija de 60 píxeles para la barra */
+    display: flex; /* Activa el modo de caja flexible para alinear sus hijos fácilmente */
+    justify-content: space-between; /* Distribuye los elementos: uno a la izquierda, otro al centro y otro a la derecha */
+    align-items: center; /* Centra todos los elementos verticalmente dentro de la barra */
+    padding: 0 15px; /* Añade un espacio de 15 píxeles a los lados internos */
+    position: sticky; /* Hace que la barra se quede fija en la parte superior al hacer scroll */
+    top: 0; /* Indica que la posición fija debe ser justo en el borde superior */
+    z-index: 100; /* Asegura que la barra siempre esté por encima del resto del contenido */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Línea blanca muy fina en la base para definir el borde del cristal */
+}
+
+.header-side { /* Contenedores laterales dentro del header para equilibrar el título */
+    width: 50px; /* Asigna un ancho fijo para que el título central quede realmente centrado */
+}
+
+#header-title { /* Estilo específico para el título principal "Control Horario" */
+    flex-grow: 1; /* Permite que el título ocupe todo el espacio central disponible */
+    text-align: center; /* Centra el texto dentro de su espacio asignado */
+    font-size: 1.8rem; /* Tamaño de fuente grande para resaltar el nombre de la app */
+    margin: 0; /* Elimina cualquier margen predeterminado */
+    font-family: Lobster; /* Aplica la fuente decorativa 'Lobster' */
+    font-style: italic; /* Pone el texto en cursiva */
+    text-decoration: underline; /* Añade un subrayado al título */
+}
+
+h2 { /* Estilos para los títulos de segundo nivel */
+    font-family: Piedra; /* Aplica la fuente decorativa 'Piedra' */
+    font-style: italic; /* Aplica el estilo cursivo */
+    text-decoration: underline; /* Añade un subrayado al texto */
+    text-align: center; /* Centra el texto en la pantalla */
+}
+
+h3 { /* Estilos para los títulos de tercer nivel (secciones dentro de tarjetas) */
+    font-family: Lobster; /* Aplica la fuente 'Lobster' */
+    font-style: italic; /* Aplica estilo cursivo */
+    text-decoration: underline; /* Añade un subrayado */
+    font-size: 1.5rem; /* Establece un tamaño de letra de 1.5 unidades relativas */
+}
+
+#menu-btn { /* Botón tipo "hamburguesa" para abrir el menú */
+    background: none; /* Elimina el color de fondo */
+    border: none; /* Quita el borde */
+    color: white; /* Color blanco para el icono de tres rayas */
+    font-size: 1.8rem; /* Tamaño grande para facilitar la pulsación táctil */
+    cursor: pointer; /* Cambia el ratón a mano al pasar por encima */
+}
+
+.sidebar { /* Contenedor del menú lateral oculto */
+    position: fixed; /* Fijo respecto a la ventana */
+    left: -280px; /* Escondido totalmente a la izquierda */
+    top: 0; /* Desde el inicio superior */
+    width: 280px; /* Ancho del menú */
+    height: 100%; /* Todo el alto de la pantalla */
+    background: var(--dark); /* Color gris oscuro */
+    color: white; /* Texto blanco */
+    transition: 0.3s ease; /* Movimiento fluido de apertura y cierre */
+    z-index: 1001; /* Siempre por encima de la barra superior */
+}
+
+.sidebar.active { /* Clase que se activa mediante JS para mostrar el menú */
+    left: 0; /* Trae el menú al borde visible de la pantalla */
+}
+
+.sidebar-header { /* Parte superior del menú con el nombre de usuario */
+    padding: 30px 20px; /* Margen interno para dar aire al texto */
+    background: rgba(0,0,0,0.2); /* Oscurece un poco el fondo del encabezado del menú */
+}
+
+.sidebar-nav a { /* Enlaces dentro del menú lateral */
+    color: #e8eaed; /* Color gris muy clarito */
+    padding: 15px 20px; /* Área de clic amplia para dedos */
+    text-decoration: none; /* Sin subrayado */
+    display: block; /* Ocupa todo el ancho del menú */
+    border-bottom: 1px solid rgba(255,255,255,0.05); /* Línea divisoria casi invisible */
+}
+
+#overlay { /* Capa oscura detrás del menú */
+    display: none; /* Invisible por defecto */
+    position: fixed; /* Cubre toda la ventana */
+    top: 0; /* Desde arriba */
+    left: 0; /* Desde la izquierda */
+    width: 100%; /* Todo el ancho */
+    height: 100%; /* Todo el alto */
+    background: rgba(0,0,0,0.5); /* Color negro al 50% de transparencia */
+    z-index: 1000; /* Justo debajo del menú pero sobre la app */
+}
+
+.view { /* Cada pantalla de la app (Login, Fichar, Admin, etc.) */
+    display: none; /* Oculta si no está activa */
+    padding: 15px; /* Separación del borde de la pantalla */
+    text-align: center; /* Centra el contenido */
+    font-family: Piedra; /* Fuente decorativa para el cuerpo */
+    font-style: italic; /* Texto en cursiva */
+}
+
+.view.active { /* La pantalla que se está mostrando actualmente */
+    display: block; /* Se hace visible */
+}
+
+.card { /* La caja principal de contenido (CRISTAL ULTRA TRANSPARENTE) */
+    background: rgba(255, 255, 255, 0.1); /* Blanco con solo 10% de opacidad para ver totalmente el fondo */
+    backdrop-filter: blur(12px); /* Desenfoque de 12px para que el texto sea legible sobre la foto */
+    -webkit-backdrop-filter: blur(12px); /* Versión necesaria para que el desenfoque funcione en iPhone/Safari */
+    padding: 15px; /* Espacio interior para que el contenido no toque los bordes */
+    border-radius: 12px; /* Esquinas redondeadas */
+    margin-bottom: 15px; /* Separación entre cajas */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Sombra marcada para que la caja destaque aunque sea transparente */
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Borde blanco fino para dar el toque final de cristal */
+}
+
+.logo-icon { /* El icono del reloj de la pantalla de identificación */
+    font-size: 4rem; /* Tamaño muy grande para el emoji */
+    margin-bottom: 10px; /* Separación con el título de abajo */
+    display: block; /* Ocupa su propia línea */
+    font-style: normal; /* Asegura que el emoji no se incline */
+}
+
+input { /* Campos de texto y contraseñas */
+    width: 100%; /* Ancho total de la caja */
+    padding: 12px; /* Relleno para escribir cómodamente */
+    margin: 6px 0; /* Separación entre campos */
+    border: 1px solid rgba(0,0,0,0.1); /* Borde gris muy suave y transparente */
+    border-radius: 8px; /* Redondeado de los bordes del input */
+    box-sizing: border-box; /* El padding no ensancha el campo */
+    font-size: 1rem; /* Letra de tamaño estándar */
+    font-family: Sriracha; /* Fuente manuscrita para los datos */
+    background: rgba(255, 255, 255, 0.6); /* Fondo semi-transparente para los propios campos */
+}
+
+button { /* Estilo general de los botones */
+    width: 100%; /* Ocupan todo el ancho de la tarjeta */
+    padding: 12px; /* Grosor del botón */
+    border: none; /* Sin bordes */
+    border-radius: 8px; /* Bordes redondeados */
+    font-weight: bold; /* Texto en negrita */
+    cursor: pointer; /* Cursor de mano */
+}
+
+.btn-main { /* Botón principal azul */
+    background-color: rgba(26, 115, 232, 0.85); /* Azul con un poco de transparencia para ir a juego con el diseño */
+    color: white; /* Texto blanco */
+    font-family: Piedra; /* Fuente decorativa */
+    font-size: 1.3rem; /* Letra un poco más grande */
+    font-style: italic; /* Cursiva */
+}
+
+.btn-success { /* Botón verde (Registrar/Entrada) */
+    background-color: var(--success); /* Color verde */
+    color: white; /* Texto blanco */
+}
+
+.btn-danger { /* Botón rojo (Borrar/Salida) */
+    background-color: var(--danger); /* Color rojo */
+    color: white; /* Texto blanco */
+}
+
+.btn-secondary { /* Botón gris (Cancelar) */
+    background-color: #6c757d; /* Color gris oscuro */
+    color: white; /* Texto blanco */
+}
+
+.btn-punch { /* Botones de fichaje grandes */
+    font-size: 1.2rem; /* Letra grande */
+    padding: 22px; /* Botón muy alto para pulsar fácil */
+    margin: 10px 0; /* Margen extra */
+}
+
+.badge { /* Etiqueta de estado del trabajador */
+    display: inline-block; /* Se ajusta al tamaño del texto */
+    padding: 4px 12px; /* Relleno lateral */
+    border-radius: 20px; /* Forma de píldora */
+    font-size: 0.8rem; /* Letra pequeña */
+    margin-bottom: 10px; /* Espacio inferior */
+    font-weight: bold; /* Texto resaltado */
+}
+
+.user-row { /* Filas de las listas */
+    display: flex; /* Elementos en línea horizontal */
+    justify-content: space-between; /* Texto a un lado, botones al otro */
+    align-items: center; /* Alineación vertical perfecta */
+    padding: 10px 0; /* Margen arriba y abajo */
+    border-bottom: 1px solid rgba(0,0,0,0.05); /* Línea divisoria muy tenue */
+}
+
+.user-btns { /* Grupo de botones Editar/Borrar */
+    display: flex; /* En línea */
+    gap: 8px; /* Espacio entre botones */
+}
+
+.btn-small { /* Botones de menor tamaño */
+    width: auto; /* Solo el ancho necesario para el texto */
+    padding: 6px 12px; /* Menos relleno */
+    font-size: 0.7rem; /* Letra mínima */
+}
+
+.btn-edit { /* Botón editar azul claro */
+    background-color: #e3f2fd; /* Fondo azul cielo */
+    color: #1976d2; /* Texto azul oscuro */
+}
+
+.btn-del { /* Botón borrar rojo claro */
+    background-color: #ffebee; /* Fondo rosa suave */
+    color: #c62828; /* Texto rojo oscuro */
+}
+
+.status-item { /* Fila de estado en vivo para admin */
+    padding: 12px; /* Relleno */
+    border-radius: 8px; /* Bordes curvados */
+    margin-bottom: 10px; /* Espacio entre trabajadores */
+    border-left: 5px solid #ccc; /* Barra lateral gris por defecto */
+}
+
+.status-working { /* Si el trabajador está fichado */
+    border-left-color: var(--success); /* Barra lateral verde */
+    background: rgba(0, 200, 83, 0.1); /* Fondo verde muy transparente */
+}
+
+.status-out { /* Si el trabajador no está fichado */
+    border-left-color: #bbb; /* Barra lateral gris */
+    background: rgba(0, 0, 0, 0.05); /* Fondo gris muy suave */
+}
+
+.ico { /* El logo circular en el header */
+    border-radius: 50%; /* Imagen redonda */
+    margin: 10px 10px 10px -10px; /* Margen para encajar en la barra */
+    animation: logo 3s ease-in-out; /* Animación de entrada de 3 segundos */
+    background-color: black; /* Fondo negro */
+    border: 2px solid red; /* Borde rojo */
+    box-shadow: 0 0 0 3px black; /* Efecto de anillo negro exterior */
+    vertical-align: middle; /* Alineación con el texto del header */
+}
+
+@keyframes logo { /* Definición de la animación del logo */
+    from { opacity: 0; transform: scale(0.5) rotate(0deg); } /* Aparece desde pequeño, invisible y sin rotar */
+    to { opacity: 1; transform: scale(1) rotate(1440deg); } /* Termina en tamaño real, visible y con varias vueltas */
+}

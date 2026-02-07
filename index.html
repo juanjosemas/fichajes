@@ -1,0 +1,126 @@
+><!DOCTYPE html> <!-- Especifica que el documento es HTML5 -->
+<html lang="es"> <!-- Define el idioma del sitio -->
+<head>
+    <meta charset="UTF-8"> <!-- Codificación de caracteres -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Ajuste para móviles -->
+    <title>Control Horario Pro</title> <!-- Título de la app -->
+    <link rel="stylesheet" href="style.css"> <!-- Enlace al archivo de estilos -->
+    <!-- Librerías para generar el PDF (Requiere conexión a internet) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700&displayfamily=Amatic+SC:wght@700&family=Caveat:wght@700&family=Dancing+Script:wght@700&family=Lobster&family=Metal+Mania&family=Yellowtail& family=Permanent+Marker&family=Piedra&family=Sriracha&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- MENÚ LATERAL (SIDEBAR) -->
+    <div id="sidebar" class="sidebar"> <!-- Contenedor del menú -->
+        <div class="sidebar-header"> <!-- Cabecera del menú con datos del usuario -->
+            <h2 id="menu-user-name">Usuario</h2>
+            <p id="menu-user-role">rol</p>
+        </div>
+        <nav class="sidebar-nav"> <!-- Lista de navegación -->
+            <a href="#" onclick="app.nav('view-home')">🏠 Inicio</a>
+            <a href="#" onclick="app.nav('view-employee')">⏱️ Fichar ahora</a>
+            
+            <div id="admin-only-menu"> <!-- Opciones exclusivas para administrador -->
+                <hr>
+                <a href="#" onclick="app.nav('view-admin-status')">🟢 Estado en vivo</a>
+                <a href="#" onclick="app.nav('view-admin-employees')">👥 Gestionar empleados</a>
+                <a href="#" onclick="app.nav('view-admin-logs')">📋 Historial completo</a>
+                <!-- El botón de PDF ahora solo se muestra al administrador al estar dentro de este div -->
+                <a href="#" onclick="app.generatePDF()">📄 Exportar PDF</a>
+            </div>
+
+            <hr>
+            <a href="#" onclick="app.logout()" class="logout-link">🚪 Cerrar sesión</a>
+        </nav>
+    </div>
+
+    <div id="overlay" onclick="app.toggleMenu()"></div> <!-- Capa oscura para cerrar el menú -->
+
+    <div class="app-container"> <!-- Contenedor principal de la aplicación -->
+        <header> <!-- Cabecera con título centrado -->
+            <div class="header-side"> <!-- Lado izquierdo: Botón sandwich -->
+                <button id="menu-btn" onclick="app.toggleMenu()" style="display:none;">☰</button>
+            </div>
+            <h1 id="header-title">Control Horario</h1> <!-- Título central -->
+            <div class="header-side"></div> <!-- Lado derecho: Espaciador -->
+        <h2><u><i><img src="img/Juanjo.ico" class="ico" width="35"></i></u></h2>
+        </header>
+
+        <!-- VISTA: LOGIN (Inicio de sesión) -->
+        <section id="view-login" class="view active">
+            <div class="card login-card">
+                <div class="logo-icon">🕒</div>
+                <h2>Identificación</h2>
+                <div class="input-group">
+                    <!-- autocapitalize="none" evita que el móvil fuerce la primera mayúscula -->
+                    <input type="text" id="login-user" placeholder="usuario" autocapitalize="none" autocorrect="off" spellcheck="false">
+                    <input type="password" id="login-pass" placeholder="contraseña" autocapitalize="none">
+                </div>
+                <button class="btn-main" onclick="app.login()">Entrar</button>
+            </div>
+        </section>
+
+        <!-- VISTA: HOME (Bienvenida) -->
+        <section id="view-home" class="view">
+            <div class="status-card text-center">
+                <h2 id="home-welcome">¡Hola!</h2>
+                <p>Bienvenido al sistema móvil de fichaje.</p>
+                <button class="btn-main" onclick="app.nav('view-employee')">Ir a panel de fichaje</button>
+            </div>
+        </section>
+
+        <!-- VISTA: EMPLEADO (Panel para fichar) -->
+        <section id="view-employee" class="view">
+            <div class="card text-center">
+                <div id="status-badge" class="badge">Estado</div>
+                <h3 id="emp-status-text">...</h3>
+                <div class="action-area">
+                    <button id="btn-in" class="btn-punch btn-success" onclick="app.punch('ENTRADA')">Fichar entrada</button>
+                    <button id="btn-out" class="btn-punch btn-danger" style="display:none;" onclick="app.punch('SALIDA')">Fichar salida</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Tus últimos registros</h3>
+                <div id="emp-history" class="logs-container"></div>
+            </div>
+        </section>
+
+        <!-- VISTA: GESTIÓN EMPLEADOS (Solo Admin) -->
+        <section id="view-admin-employees" class="view">
+            <div class="card">
+                <h3 id="form-title">Crear empleado</h3>
+                <input type="hidden" id="edit-id"> <!-- Input invisible para saber si editamos -->
+                <input type="text" id="new-emp-name" placeholder="nombre completo" autocapitalize="none" autocorrect="off" spellcheck="false">
+                <input type="password" id="new-emp-pass" placeholder="contraseña" autocapitalize="none">
+                <button id="btn-action-main" class="btn-success" onclick="app.saveEmployee()">Registrar</button>
+                <button id="btn-action-cancel" class="btn-secondary" style="display:none; margin-top:5px;" onclick="app.resetForm()">Cancelar edición</button>
+            </div>
+            <div class="card">
+                <h3>Lista de personal</h3>
+                <div id="admin-users-list"></div>
+            </div>
+        </section>
+
+        <!-- VISTA: ESTADO EN VIVO (Solo Admin) -->
+        <section id="view-admin-status" class="view">
+            <div class="card">
+                <h3>🟢 Trabajando ahora</h3>
+                <div id="admin-status-list"></div>
+            </div>
+        </section>
+
+        <!-- VISTA: HISTORIAL GLOBAL (Solo Admin) -->
+        <section id="view-admin-logs" class="view">
+            <div class="card">
+                <h3>Historial de movimientos</h3>
+                <div id="admin-logs-list" class="logs-container"></div>
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script> <!-- Enlace a la lógica -->
+</body>
+</html>

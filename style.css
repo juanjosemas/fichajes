@@ -10,7 +10,7 @@ body { /* Estilo para el cuerpo del documento */
     font-family: -apple-system, sans-serif; /* Fuente del sistema móvil */
     margin: 0; /* Elimina el margen externo */
     background-color: var(--bg); /* Aplica el color de fondo de reserva */
-    color: var(--dark); /* Aplica el color de texto oscuro */
+    color: var(--dark); /* Establece el color de texto oscuro */
     overflow-x: hidden; /* Evita el desplazamiento horizontal */
     background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)), url('img/construccion.jpg'); /* Imagen de fondo con capa suave */
     background-repeat: no-repeat; /* Evita que la imagen se repita */
@@ -24,7 +24,7 @@ header { /* Estilo de la barra superior */
     backdrop-filter: blur(10px); /* Efecto de desenfoque detrás de la barra */
     -webkit-backdrop-filter: blur(10px); /* Soporte de desenfoque para iPhone/Safari */
     color: white; /* Color de texto blanco */
-    height: 60px; /* Altura de la barra de navegación */
+    height: 55px; /* Altura reducida de la barra de navegación para ganar espacio */
     display: flex; /* Activa el diseño flexible */
     justify-content: space-between; /* Separa los elementos a los lados */
     align-items: center; /* Centra los elementos verticalmente */
@@ -38,7 +38,7 @@ header { /* Estilo de la barra superior */
 #header-title { /* Título principal de la cabecera */
     flex-grow: 1; /* Ocupa el espacio central */
     text-align: center; /* Centra el texto */
-    font-size: 1.8rem; /* Tamaño de letra grande */
+    font-size: 1.6rem; /* Tamaño de letra ligeramente reducido */
     margin: 0; /* Sin márgenes externos */
     font-family: Lobster; /* Fuente decorativa Lobster */
     font-style: italic; /* Texto en cursiva */
@@ -46,16 +46,26 @@ header { /* Estilo de la barra superior */
     text-shadow: 0 2px 4px rgba(0,0,0,0.3); /* Sombra para resaltar sobre el fondo */
 }
 
-h2, h3 { /* Estilos para subtítulos */
-    font-family: Piedra; /* Fuente decorativa Piedra */
-    font-style: italic; /* Texto en cursiva */
-    text-align: center; /* Centrado horizontal */
-    text-shadow: 0 1px 2px rgba(255,255,255,0.8); /* Sombra blanca para mejorar contraste */
+h2 { /* Estilos para títulos secundarios */
+    font-family: Piedra; /* Fuente Piedra */
+    font-style: italic; /* Cursiva */
+    text-align: center; /* Centrado */
+    margin: 10px 0; /* Margen vertical reducido */
+    text-shadow: 0 1px 2px rgba(255,255,255,0.8); /* Sombra blanca */
+}
+
+h3 { /* Estilos para títulos dentro de las cajas */
+    font-family: Lobster; /* Fuente Lobster */
+    font-style: italic; /* Cursiva */
+    text-align: center; /* Centrado */
+    font-size: 1.3rem; /* Tamaño de letra reducido para compactar la caja */
+    margin: 5px 0 10px 0; /* Margen ajustado: 5px arriba, 10px abajo */
+    text-shadow: 0 1px 2px rgba(255,255,255,0.8); /* Sombra blanca */
 }
 
 .view { /* Contenedor de cada pantalla de la app */
     display: none; /* Oculta la pantalla por defecto */
-    padding: 15px; /* Espacio de margen interno */
+    padding: 10px; /* Margen interno reducido para que las cajas lleguen más al borde */
     text-align: center; /* Centra el contenido interior */
 }
 
@@ -63,78 +73,78 @@ h2, h3 { /* Estilos para subtítulos */
     display: block; /* Muestra la pantalla cuando está activa */
 }
 
-.card { /* Tarjeta de contenido estilo cristal */
-    background: rgba(255, 255, 255, 0.1); /* Transparencia de 0.1 solicitada */
-    backdrop-filter: blur(12px); /* Desenfoque de fondo para poder leer el texto */
-    -webkit-backdrop-filter: blur(12px); /* Soporte Safari para el desenfoque */
-    padding: 15px; /* Relleno interno de la tarjeta */
+.card { /* Tarjeta de contenido estilo cristal compacta */
+    background: rgba(255, 255, 255, 0.1); /* Transparencia de 0.1 mantenida */
+    backdrop-filter: blur(12px); /* Desenfoque de fondo */
+    -webkit-backdrop-filter: blur(12px); /* Soporte Safari */
+    padding: 10px; /* Relleno interno reducido de 15px a 10px para compactar */
     border-radius: 12px; /* Redondeado de las esquinas */
-    margin-bottom: 15px; /* Separación con la siguiente tarjeta */
+    margin-bottom: 10px; /* Separación reducida entre tarjetas */
     box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Sombra de profundidad */
     border: 1px solid rgba(255, 255, 255, 0.3); /* Borde blanco muy fino */
     position: relative; /* Contexto de capas */
-    z-index: 1; /* Capa base */
+    z-index: 1; /* Capa base de contenido */
 }
 
 .filter-row { /* Fila para los selectores de mes */
-    display: flex; /* Alineación flexible */
+    display: flex; /* Diseño en línea */
     justify-content: center; /* Centrado horizontal */
     align-items: center; /* Centrado vertical */
-    gap: 10px; /* Espacio entre elementos */
-    margin-bottom: 10px; /* Separación inferior */
-    background: rgba(255,255,255,0.2); /* Fondo suave */
-    padding: 8px; /* Relleno */
+    gap: 8px; /* Espacio entre elementos reducido */
+    margin-bottom: 8px; /* Margen inferior reducido */
+    background: rgba(255,255,255,0.2); /* Fondo sutil */
+    padding: 6px; /* Relleno interno más pequeño */
     border-radius: 8px; /* Redondeado */
 }
 
 .logo-icon { /* Icono del reloj en login */
-    font-size: 4rem; /* Tamaño muy grande */
-    margin-bottom: 10px; /* Separación inferior */
+    font-size: 3.5rem; /* Tamaño un poco más pequeño que antes */
+    margin-bottom: 5px; /* Separación inferior mínima */
     display: block; /* Ocupa su propia línea */
 }
 
-input { /* Estilo de los campos de escritura (CORRECCIÓN OPPO) */
+input { /* Estilo de los campos de escritura */
     width: 100%; /* Ocupa todo el ancho */
-    padding: 14px; /* Relleno amplio para el dedo */
-    margin: 8px 0; /* Separación vertical */
-    border: 2px solid rgba(0,0,0,0.1); /* Borde sutil */
+    padding: 12px; /* Relleno ligeramente reducido para compactar altura */
+    margin: 6px 0; /* Separación vertical */
+    border: 1px solid rgba(0,0,0,0.1); /* Borde sutil */
     border-radius: 8px; /* Redondeado */
-    box-sizing: border-box; /* Padding incluido en el ancho */
-    font-size: 1.1rem; /* Letra grande */
+    box-sizing: border-box; /* Incluye el padding en el ancho */
+    font-size: 1rem; /* Tamaño de letra estándar */
     font-family: Sriracha; /* Fuente manuscrita */
-    background: rgba(255, 255, 255, 0.9); /* Casi opaco para que Android detecte el campo */
+    background: rgba(255, 255, 255, 0.9); /* Casi blanco opaco para visibilidad */
     color: #000; /* Texto negro */
     position: relative; /* Contexto relativo */
-    z-index: 10; /* Siempre por encima para permitir clics */
+    z-index: 10; /* Por encima de desenfoques para permitir clics */
 }
 
-input:focus { /* Cuando el usuario está escribiendo */
-    background: #ffffff; /* Fondo blanco sólido */
+input:focus { /* Al escribir en el campo */
+    background: #ffffff; /* Blanco sólido */
     outline: none; /* Quita borde de sistema */
     border-color: var(--primary); /* Borde azul */
-    box-shadow: 0 0 10px rgba(26, 115, 232, 0.4); /* Resplandor */
+    box-shadow: 0 0 8px rgba(26, 115, 232, 0.3); /* Resplandor sutil */
 }
 
 button { /* Estilo base de los botones */
     width: 100%; /* Ancho completo */
-    padding: 12px; /* Grosor */
+    padding: 10px; /* Relleno reducido */
     border: none; /* Sin bordes */
-    border-radius: 8px; /* Redondeado de esquinas */
-    font-weight: bold; /* Texto en negrita */
-    cursor: pointer; /* Cambia el ratón a mano */
+    border-radius: 8px; /* Redondeado */
+    font-weight: bold; /* Negrita */
+    cursor: pointer; /* Mano al pasar */
 }
 
 .btn-main { /* Botón azul principal */
     background-color: rgba(26, 115, 232, 0.85); /* Azul translúcido */
-    color: white; /* Color de letra blanco */
-    font-family: Piedra; /* Fuente decorativa */
-    font-size: 1.3rem; /* Tamaño destacado */
+    color: white; /* Letra blanca */
+    font-family: Piedra; /* Fuente Piedra */
+    font-size: 1.2rem; /* Tamaño ligeramente reducido */
 }
 
-.btn-punch { /* Botones gigantes de fichaje */
-    font-size: 1.2rem; /* Letra grande */
-    padding: 22px; /* Botón muy alto */
-    margin: 10px 0; /* Separación vertical */
+.btn-punch { /* Botones de fichaje ahora más pequeños */
+    font-size: 1.1rem; /* Letra un poco más pequeña */
+    padding: 16px; /* Altura reducida */
+    margin: 8px 0; /* Margen vertical reducido */
 }
 
 .btn-success { /* Botón verde para entradas */
@@ -154,58 +164,47 @@ button { /* Estilo base de los botones */
 
 .badge { /* Etiqueta de estado del empleado */
     display: inline-block; /* Se adapta al texto */
-    padding: 5px 15px; /* Relleno interno */
+    padding: 4px 12px; /* Relleno interno reducido */
     border-radius: 20px; /* Forma de pastilla */
     color: white; /* Texto blanco */
-    font-weight: bold; /* Texto en negrita */
+    font-weight: bold; /* Negrita */
+    font-size: 0.8rem; /* Letra pequeña */
 }
 
-.user-row { /* Filas de los registros del historial */
+.user-row { /* Filas de las listas de registros */
     display: flex; /* Activa flexbox */
     flex-direction: column; /* Apila los datos verticalmente */
     background: rgba(255,255,255,0.25); /* Fondo suave */
-    padding: 10px; /* Relleno interno */
+    padding: 8px 10px; /* Relleno reducido */
     border-radius: 8px; /* Redondeado */
-    margin-bottom: 8px; /* Separación entre filas */
+    margin-bottom: 6px; /* Separación entre filas reducida */
     text-align: left; /* Alinea el texto a la izquierda */
     border: 1px solid rgba(255,255,255,0.1); /* Borde sutil */
 }
 
-.btn-user-select { /* Botones para elegir empleado en administración */
+.btn-user-select { /* Botones para elegir empleado */
     background: rgba(255, 255, 255, 0.4); /* Blanco suave */
-    color: var(--dark); /* Color de texto oscuro */
-    margin-bottom: 8px; /* Separación */
-    text-align: left; /* Alineado a la izquierda */
-    padding: 15px; /* Área de clic amplia */
+    color: var(--dark); /* Texto oscuro */
+    margin-bottom: 6px; /* Separación reducida */
+    text-align: left; /* Alineado izquierda */
+    padding: 10px; /* Relleno reducido */
     font-family: Sriracha; /* Fuente manuscrita */
 }
 
 .btn-small { /* Botones pequeños como borrar/editar */
-    width: auto; /* Solo el ancho del texto */
-    padding: 6px 10px; /* Relleno pequeño */
-    font-size: 0.7rem; /* Letra pequeña */
-    margin-left: 5px; /* Separación lateral */
-}
-
-.status-item { /* Fila de estado en vivo */
-    padding: 12px; /* Relleno */
-    border-radius: 8px; /* Redondeado */
-    margin-bottom: 10px; /* Separación */
-    border-left: 5px solid #ccc; /* Barra gris lateral */
-}
-
-.status-working { /* Color cuando trabaja */
-    border-left-color: var(--success); /* Barra verde */
-    background: rgba(0, 200, 83, 0.1); /* Fondo verde suave */
+    width: auto; /* Ancho automático */
+    padding: 4px 8px; /* Relleno mínimo */
+    font-size: 0.7rem; /* Letra mínima */
+    margin-left: 4px; /* Separación mínima */
 }
 
 .ico { /* Imagen del logo circular */
     border-radius: 50%; /* Forma circular */
-    margin: 10px 10px 10px -10px; /* Ajuste en cabecera */
-    animation: logo 3s ease-in-out; /* Animación de 3s */
+    margin: 8px 8px 8px -10px; /* Márgenes ajustados */
+    animation: logo 3s ease-in-out; /* Animación de rotación */
     background-color: black; /* Fondo negro */
     border: 2px solid red; /* Borde rojo */
-    vertical-align: middle; /* Alineado con texto */
+    vertical-align: middle; /* Centrado vertical */
 }
 
 @keyframes logo { /* Definición animación rotación */
@@ -223,7 +222,7 @@ button { /* Estilo base de los botones */
     color: white; /* Letra blanca */
     transition: 0.3s ease; /* Movimiento suave */
     z-index: 1001; /* Sobre todo el contenido */
-    visibility: hidden; /* Evita bloqueos táctiles */
+    visibility: hidden; /* Evita clics invisibles */
 }
 
 .sidebar.active { /* Sidebar visible */
@@ -243,10 +242,10 @@ button { /* Estilo base de los botones */
 }
 
 .sidebar-nav a { /* Enlaces del menú lateral */
-    color: #e8eaed; /* Color gris claro */
-    padding: 15px 20px; /* Área de toque grande */
+    color: #e8eaed; /* Gris claro */
+    padding: 12px 20px; /* Área de toque ajustada */
     text-decoration: none; /* Quita subrayado */
-    display: block; /* Ocupa toda la fila */
+    display: block; /* Bloque completo */
     border-bottom: 1px solid rgba(255,255,255,0.05); /* Separador sutil */
     font-family: Piedra; /* Fuente decorativa */
 }

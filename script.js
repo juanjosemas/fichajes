@@ -1,55 +1,54 @@
 /** 
- * CONFIGURACIÓN DE FIREBASE 
- * ¡ATENCIÓN! Debes sustituir estas comillas por tus claves reales de la consola de Firebase.
- * Si dejas esto como está, la aplicación NO funcionará.
+ * CONFIGURACIÓN DE FIREBASE (Copiada exactamente de tu consola)
  **/
 const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "TU_PROYECTO.firebaseapp.com",
-    databaseURL: "https://TU_PROYECTO.firebaseio.com",
-    projectId: "TU_PROYECTO",
-    storageBucket: "TU_PROYECTO.appspot.com",
-    messagingSenderId: "TU_ID",
-    appId: "TU_APP_ID"
+    apiKey: "AIzaSyCeSB3MXhuKiJ9XANBfHzwEWU1e8mlqB6k",
+    authDomain: "fichajes-ec381.firebaseapp.com",
+    databaseURL: "https://fichajes-ec381-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "fichajes-ec381",
+    storageBucket: "fichajes-ec381.firebasestorage.app",
+    messagingSenderId: "650676337319",
+    appId: "1:650676337319:web:18140b21d1103e4b20b982",
+    measurementId: "G-NTBW1YL7KP"
 };
 
-// Intentamos inicializar Firebase con un control de errores
+// Inicializamos la conexión con Firebase
 try {
-    if (firebaseConfig.apiKey === "TU_API_KEY") {
-        alert("AVISO: No has configurado las claves de Firebase en script.js");
-    }
     firebase.initializeApp(firebaseConfig);
-    var db = firebase.database(); // Usamos 'var' para asegurar que sea global
+    var db = firebase.database(); // Acceso a la base de datos sincronizada
 } catch (e) {
-    alert("ERROR CRÍTICO: Firebase no pudo iniciarse. Revisa la configuración.");
+    console.error("Error al conectar con Firebase: ", e);
 }
 
 /** OBJETO PRINCIPAL DE LA APP **/
 const app = {
-    users: [], 
-    logs: [], 
-    currentUser: null, 
+    users: [], // Empleados sincronizados desde la nube
+    logs: [], // Fichajes sincronizados desde la nube
+    currentUser: null, // Usuario logueado en este móvil
 
-    // FUNCIÓN DE INICIO
+    // FUNCIÓN DE INICIO: Se ejecuta al abrir la app
     init: function() {
-        // ESCUCHA EN TIEMPO REAL
+        // 1. ESCUCHA EN TIEMPO REAL: Firebase nos envía los datos cada vez que hay un cambio
         db.ref('/').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 this.users = data.users || [];
                 this.logs = data.logs || [];
                 
+                // Si la nube está vacía, creamos al admin inicial
                 if (this.users.length === 0) {
                     this.users = [{ id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' }];
-                    this.saveData();
+                    this.saveData(); 
                 }
+                
+                // Actualizamos la pantalla actual para mostrar los datos recién bajados
                 this.refreshCurrentView();
             }
         }, (error) => {
-            alert("Error de permisos en Firebase: Revisa las reglas de la base de datos.");
+            alert("Error de Firebase: Revisa que las REGLAS de Realtime Database estén en 'true'.");
         });
 
-        // FILTROS POR DEFECTO
+        // 2. CONFIGURACIÓN DE FILTROS: Mes actual por defecto
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         setTimeout(() => {
@@ -59,7 +58,7 @@ const app = {
             });
         }, 300);
 
-        // SESIÓN PERSISTENTE
+        // 3. PERSISTENCIA: Si el usuario no cerró sesión, entra directo
         const savedSession = localStorage.getItem('session');
         if (savedSession) {
             this.currentUser = JSON.parse(savedSession);
@@ -68,25 +67,28 @@ const app = {
         }
     },
 
-    // GUARDAR EN LA NUBE
+    // GUARDA LOS DATOS EN LA NUBE (Sincroniza todos los móviles)
     saveData: function() {
         db.ref('/').set({
             users: this.users,
             logs: this.logs
-        }).catch(e => alert("Error al guardar en la nube: " + e.message));
+        }).catch(e => alert("Error al subir a la nube: " + e.message));
     },
 
+    // CONTROL DEL MENÚ SIDEBAR
     toggleMenu: function() {
         const isActive = document.getElementById('sidebar').classList.toggle('active'); 
         document.getElementById('overlay').style.display = isActive ? 'block' : 'none'; 
     },
 
+    // NAVEGACIÓN ENTRE PANTALLAS
     nav: function(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
-        const view = document.getElementById(viewId);
-        if(view) view.classList.add('active'); 
+        const targetView = document.getElementById(viewId);
+        if(targetView) targetView.classList.add('active'); 
         if (document.getElementById('sidebar').classList.contains('active')) this.toggleMenu(); 
         
+        // Renderizamos los datos de la vista elegida
         if(viewId === 'view-admin-status') this.renderAdminStatus(); 
         if(viewId === 'view-admin-employees') this.renderAdminUsers(); 
         if(viewId === 'view-admin-logs') this.renderAdminLogs(); 
@@ -94,6 +96,7 @@ const app = {
         if(viewId === 'view-employee') this.renderEmployeePanel(); 
     },
 
+    // LOGIN
     login: function() {
         const u = document.getElementById('login-user').value.trim().toLowerCase(); 
         const p = document.getElementById('login-pass').value.trim(); 
@@ -104,13 +107,12 @@ const app = {
             localStorage.setItem('session', JSON.stringify(this.currentUser));
             this.setupUI(user); 
             this.nav('view-home'); 
-        } else {
-            alert("Acceso denegado"); 
-        }
+        } else alert("Acceso denegado"); 
     },
 
     setupUI: function(user) {
-        document.getElementById('menu-btn').style.display = 'block'; 
+        const btn = document.getElementById('menu-btn');
+        if(btn) btn.style.display = 'block'; 
         document.getElementById('menu-user-name').innerText = user.name; 
         document.getElementById('menu-user-role').innerText = user.role === 'admin' ? 'Administrador' : 'Empleado'; 
         document.getElementById('admin-only-menu').style.display = (user.role === 'admin') ? 'block' : 'none'; 
@@ -123,18 +125,13 @@ const app = {
         this.nav('view-login'); 
     },
 
-    // --- FICHADO CON GPS Y SINCRONIZACIÓN ---
+    // --- SISTEMA DE FICHADO (GPS + NUBE) ---
     punch: function(type) {
-        if (!navigator.geolocation) {
-            return alert("Tu dispositivo no permite usar GPS.");
-        }
-
+        if (!navigator.geolocation) return alert("GPS no disponible");
         const btn = type === 'ENTRADA' ? document.getElementById('btn-in') : document.getElementById('btn-out');
         const originalText = btn.innerText;
-        btn.innerText = "Buscando GPS..."; 
-        btn.disabled = true;
+        btn.innerText = "Buscando GPS..."; btn.disabled = true;
 
-        // Configuramos un tiempo límite de 10 segundos para el GPS
         navigator.geolocation.getCurrentPosition((pos) => {
             const now = new Date();
             const newLog = {
@@ -147,29 +144,16 @@ const app = {
             };
 
             this.logs.push(newLog);
+            this.saveData(); // Sincroniza inmediatamente con Google Firebase
             
-            // Subimos a Firebase
-            db.ref('/logs').set(this.logs)
-                .then(() => {
-                    btn.disabled = false;
-                    btn.innerText = originalText;
-                    alert("Fichaje realizado y guardado en la nube.");
-                })
-                .catch(e => {
-                    alert("Error al subir a la nube: " + e.message);
-                    btn.disabled = false;
-                    btn.innerText = originalText;
-                });
-
-        }, (err) => { 
             btn.disabled = false;
             btn.innerText = originalText;
-            alert("Error GPS (" + err.code + "): " + err.message + ". Asegúrate de activar la ubicación en el móvil."); 
-        }, { 
-            enableHighAccuracy: true, 
-            timeout: 10000, 
-            maximumAge: 0 
-        });
+            alert("Fichaje guardado y sincronizado");
+        }, (err) => { 
+            alert("Error GPS: Activa la ubicación en tu móvil"); 
+            btn.disabled = false; 
+            btn.innerText = originalText;
+        }, { enableHighAccuracy: true, timeout: 10000 });
     },
 
     // --- COPIAS DE SEGURIDAD ---
@@ -178,7 +162,7 @@ const app = {
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `Backup_${new Date().toLocaleDateString()}.json`;
+        a.download = `Copia_Nube_${new Date().toLocaleDateString()}.json`;
         a.click();
     },
 
@@ -187,20 +171,20 @@ const app = {
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                this.users = data.users; 
-                this.logs = data.logs;
-                this.saveData(); 
-                alert("Datos restaurados.");
-            } catch(e) { alert("Archivo inválido"); }
+                if (confirm("¿Sobrescribir datos de la NUBE con este archivo?")) {
+                    this.users = data.users; this.logs = data.logs;
+                    this.saveData(); 
+                }
+            } catch(err) { alert("Archivo no válido"); }
         };
         reader.readAsText(event.target.files[0]);
     },
 
-    // --- EDICIÓN Y RECALCULO ---
+    // --- EDICIÓN Y BORRADO ---
     editLog: function(timestamp) {
         const log = this.logs.find(l => l.timestamp === timestamp);
         if (!log) return;
-        const newTimeStr = prompt("Editar hora (DD/MM/AAAA, HH:MM:SS)", log.time);
+        const newTimeStr = prompt("Editar hora (Formato: DD/MM/AAAA, HH:MM:SS)", log.time);
         if (newTimeStr) {
             try {
                 const parts = newTimeStr.split(', ');
@@ -210,19 +194,19 @@ const app = {
                 if (isNaN(nD.getTime())) throw new Error();
                 log.time = newTimeStr;
                 log.timestamp = nD.getTime();
-                this.saveData();
-            } catch (e) { alert("Formato incorrecto."); }
+                this.saveData(); // Guarda la corrección en la nube
+            } catch (e) { alert("Formato incorrecto"); }
         }
     },
 
     deleteLog: function(timestamp) {
-        if (confirm("¿Borrar permanentemente?")) {
+        if (confirm("¿Borrar definitivamente de la nube?")) {
             this.logs = this.logs.filter(l => l.timestamp !== timestamp);
             this.saveData();
         }
     },
 
-    // --- RENDERS ---
+    // --- FUNCIONES AUXILIARES ---
     formatDuration: function(ms) {
         if (ms <= 0) return "0m";
         const min = Math.floor(ms / 60000);
@@ -257,12 +241,15 @@ const app = {
     refreshCurrentView: function() {
         const active = document.querySelector('.view.active');
         if (active) this.nav(active.id);
-        if (document.getElementById('admin-employee-detail-card').style.display === 'block') {
+        const detailCard = document.getElementById('admin-employee-detail-card');
+        if (detailCard && detailCard.style.display === 'block') {
             const title = document.getElementById('detail-employee-name').innerText;
             const user = this.users.find(u => title.includes(u.name));
             if (user) this.viewEmployeeDetail(user.id);
         }
     },
+
+    // --- RENDERS (DIBUJADO) ---
 
     renderEmployeePanel: function() {
         const uLogs = this.logs.filter(l => l.userId === this.currentUser.id);
@@ -281,14 +268,14 @@ const app = {
                 <small>${p.entry ? 'E: '+p.entry.time.split(',')[1] : '--'} | ${p.exit ? 'S: '+p.exit.time.split(',')[1] : '...'}</small>
                 ${p.exit && p.entry ? `<b style="color:var(--primary)">Total: ${this.formatDuration(p.duration)}</b>` : ''}
             </div>
-        `).join('') || '<p>Sin registros este mes.</p>';
+        `).join('') || '<p style="margin-top:10px">Sin registros este mes.</p>';
     },
 
     renderAdminByEmployee: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
         document.getElementById('admin-select-employee-list').innerHTML = emps.map(u => `
             <button class="btn-user-select" onclick="app.viewEmployeeDetail('${u.id}')">👤 ${u.name}</button>
-        `).join('') || 'Sin empleados.';
+        `).join('') || 'No hay empleados registrados.';
     },
 
     viewEmployeeDetail: function(userId) {
@@ -307,9 +294,9 @@ const app = {
                     </div>
                 </div>
                 <small>${p.entry ? 'E: '+p.entry.time.split(',')[1] : '--'} | ${p.exit ? 'S: '+p.exit.time.split(',')[1] : 'En curso'}</small>
-                ${p.exit && p.entry ? `<b style="color:var(--primary)">Total: ${this.formatDuration(p.duration)}</b>` : ''}
+                ${p.exit && p.entry ? `<b style="color:var(--primary)">Horas: ${this.formatDuration(p.duration)}</b>` : ''}
             </div>
-        `).join('') || '<p>Sin datos.</p>';
+        `).join('') || '<p style="margin-top:10px">Sin datos para este mes.</p>';
         document.getElementById('admin-employee-detail-card').style.display = 'block';
     },
 
@@ -337,7 +324,7 @@ const app = {
                 <small>E: ${p.entry ? p.entry.time : '--'} | S: ${p.exit ? p.exit.time : '...'}</small>
                 ${p.exit && p.entry ? `<b style="color:var(--success)">⏱️ ${this.formatDuration(p.duration)}</b>` : ''}
             </div>
-        `).join('') || '<p>Sin datos este mes.</p>';
+        `).join('') || '<p style="margin-top:10px">Sin datos este mes.</p>';
     },
 
     renderAdminUsers: function() {
@@ -350,7 +337,7 @@ const app = {
                     <button class="btn-small btn-del" onclick="app.deleteEmployee('${u.id}')">X</button>
                 </div>
             </div>
-        `).join('') || 'Sin empleados.';
+        `).join('') || 'Sin empleados registrados.';
     },
 
     saveEmployee: function() {
@@ -358,6 +345,7 @@ const app = {
         const pass = document.getElementById('new-emp-pass').value.trim();
         const editId = document.getElementById('edit-id').value;
         if(!name || !pass) return alert("Faltan datos");
+        
         if(editId){
             const user = this.users.find(u => u.id === editId);
             user.name = name; user.pass = pass;
@@ -392,11 +380,13 @@ const app = {
         }
     },
 
+    // EXCEL
     generateExcel: function() {
         const filterId = this.currentUser.role === 'admin' ? 'filter-date-admin-logs' : 'filter-date-emp';
         const filterVal = document.getElementById(filterId).value;
         const filtered = this.filterLogsByMonth(this.logs, filterId);
         const paired = this.getPairedLogs(filtered);
+
         const excelData = paired.map(p => ({
             "Empleado": p.userName,
             "Fecha": p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0],
@@ -404,6 +394,7 @@ const app = {
             "Salida": p.exit ? p.exit.time.split(',')[1].trim() : "En curso",
             "Total Horas": p.exit ? this.formatDuration(p.duration) : "---"
         }));
+
         const worksheet = XLSX.utils.json_to_sheet(excelData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Jornadas");

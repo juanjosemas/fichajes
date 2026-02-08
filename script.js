@@ -49,7 +49,7 @@ const app = {
         document.getElementById('overlay').style.display = isActive ? 'block' : 'none'; 
     },
 
-    // NAVEGA ENTRE LAS DIFERENTES PANTALLAS (VISTAS)
+    // NAVEGACIÓN ENTRE LAS DIFERENTES PANTALLAS (VISTAS)
     nav: function(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
         document.getElementById(viewId).classList.add('active'); 
@@ -79,7 +79,7 @@ const app = {
         }
     },
 
-    // CONFIGURA QUÉ OPCIONES DE MENÚ SE VEN SEGÚN EL ROL
+    // CONFIGURA QUÉ OPCIONES DE MENÚ SE VE SEGÚN EL ROL
     setupUI: function(user) {
         document.getElementById('menu-btn').style.display = 'block'; 
         document.getElementById('menu-user-name').innerText = user.name; 
@@ -142,15 +142,46 @@ const app = {
         });
     },
 
-    // --- EDICIÓN DE MARCACIONES ---
+    // --- EDICIÓN DE MARCACIONES (CON RECALCULO DE TIEMPO) ---
     editLog: function(timestamp) {
         const log = this.logs.find(l => l.timestamp === timestamp);
         if (!log) return;
-        const newTime = prompt("Editar hora (Ejemplo: DD/MM/AAAA, HH:MM:SS)", log.time);
-        if (newTime) {
-            log.time = newTime;
-            this.saveData();
-            this.refreshCurrentView();
+        
+        const newTimeStr = prompt("Editar hora (Formato exacto: DD/MM/AAAA, HH:MM:SS)", log.time);
+        
+        if (newTimeStr) {
+            try {
+                // Intentamos procesar la fecha para generar el nuevo timestamp numérico
+                // Formato esperado: "8/2/2026, 12:00:00"
+                const parts = newTimeStr.split(', ');
+                const dateParts = parts[0].split('/');
+                const timeParts = parts[1].split(':');
+                
+                // Creamos objeto fecha (Mes es 0-11, por eso restamos 1)
+                const newDateObj = new Date(
+                    parseInt(dateParts[2]), 
+                    parseInt(dateParts[1]) - 1, 
+                    parseInt(dateParts[0]), 
+                    parseInt(timeParts[0]), 
+                    parseInt(timeParts[1]), 
+                    parseInt(timeParts[2])
+                );
+
+                if (isNaN(newDateObj.getTime())) {
+                    throw new Error("Formato inválido");
+                }
+
+                // ACTUALIZAMOS AMBOS VALORES: Texto para vista y Timestamp para cálculos
+                log.time = newTimeStr;
+                log.timestamp = newDateObj.getTime();
+
+                this.saveData();
+                this.refreshCurrentView(); // Al refrescar, getPairedLogs usará el nuevo timestamp
+                alert("Registro actualizado y tiempo trabajado recalculado.");
+
+            } catch (e) {
+                alert("Error: Asegúrate de respetar el formato DD/MM/AAAA, HH:MM:SS");
+            }
         }
     },
 

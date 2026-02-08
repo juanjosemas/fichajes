@@ -1,25 +1,25 @@
 /** OBJETO PRINCIPAL DE LA APP **/
 const app = {
-    users: [], 
-    logs: [], 
-    currentUser: null, 
+    users: [], // Almacena los empleados registrados
+    logs: [], // Almacena todos los fichajes realizados
+    currentUser: null, // Almacena el usuario con la sesión activa
 
-    // FUNCIÓN DE INICIO
+    // FUNCIÓN DE INICIO: Se ejecuta nada más cargar la página
     init: function() {
-        // Cargar usuarios
+        // Carga los usuarios de la memoria, si no hay, crea el admin inicial
         this.users = JSON.parse(localStorage.getItem('users')) || [{ id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' }]; 
         
-        // Cargar fichajes
+        // Carga los fichajes de la memoria
         this.logs = JSON.parse(localStorage.getItem('logs')) || []; 
         this.saveData(); 
 
-        // ESTABLECER MES ACTUAL EN FILTROS POR DEFECTO
+        // Configura los filtros de fecha al mes actual al arrancar
         const now = new Date();
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const monthStr = `${year}-${month}`;
         
-        // Asignar valor inicial a los inputs de tipo mes
+        // Aplica el mes actual a los selectores de fecha
         setTimeout(() => {
             const filters = ['filter-date-emp', 'filter-date-admin-logs', 'filter-date-admin-detail'];
             filters.forEach(id => {
@@ -28,7 +28,7 @@ const app = {
             });
         }, 150);
 
-        // AUTO-LOGIN (Persistencia de sesión)
+        // PERSISTENCIA: Si el usuario no cerró sesión la última vez, entra directo
         const savedSession = localStorage.getItem('session');
         if (savedSession) {
             this.currentUser = JSON.parse(savedSession);
@@ -37,22 +37,25 @@ const app = {
         }
     },
 
+    // GUARDA LOS DATOS ACTUALES EN LA MEMORIA DEL NAVEGADOR
     saveData: function() {
         localStorage.setItem('users', JSON.stringify(this.users)); 
         localStorage.setItem('logs', JSON.stringify(this.logs)); 
     },
 
+    // ABRE O CIERRA EL MENÚ LATERAL
     toggleMenu: function() {
         const isActive = document.getElementById('sidebar').classList.toggle('active'); 
         document.getElementById('overlay').style.display = isActive ? 'block' : 'none'; 
     },
 
+    // NAVEGA ENTRE LAS DIFERENTES PANTALLAS (VISTAS)
     nav: function(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
         document.getElementById(viewId).classList.add('active'); 
         if (document.getElementById('sidebar').classList.contains('active')) this.toggleMenu(); 
         
-        // Renderizado forzado según la vista
+        // Repinta los datos necesarios al cambiar de pantalla
         if(viewId === 'view-admin-status') this.renderAdminStatus(); 
         if(viewId === 'view-admin-employees') this.renderAdminUsers(); 
         if(viewId === 'view-admin-logs') this.renderAdminLogs(); 
@@ -60,6 +63,7 @@ const app = {
         if(viewId === 'view-employee') this.renderEmployeePanel(); 
     },
 
+    // PROCESO DE INICIO DE SESIÓN
     login: function() {
         const u = document.getElementById('login-user').value.trim().toLowerCase(); 
         const p = document.getElementById('login-pass').value.trim(); 
@@ -67,12 +71,15 @@ const app = {
 
         if (user && user.pass === p) { 
             this.currentUser = user; 
-            localStorage.setItem('session', JSON.stringify(this.currentUser));
+            localStorage.setItem('session', JSON.stringify(this.currentUser)); // Guarda la sesión
             this.setupUI(user); 
             this.nav('view-home'); 
-        } else alert("Acceso denegado"); 
+        } else {
+            alert("Acceso denegado"); 
+        }
     },
 
+    // CONFIGURA QUÉ OPCIONES DE MENÚ SE VEN SEGÚN EL ROL
     setupUI: function(user) {
         document.getElementById('menu-btn').style.display = 'block'; 
         document.getElementById('menu-user-name').innerText = user.name; 
@@ -80,14 +87,15 @@ const app = {
         document.getElementById('admin-only-menu').style.display = (user.role === 'admin') ? 'block' : 'none'; 
     },
 
+    // CIERRE DE SESIÓN
     logout: function() {
         this.currentUser = null; 
-        localStorage.removeItem('session');
+        localStorage.removeItem('session'); // Borra la sesión de la memoria
         document.getElementById('menu-btn').style.display = 'none'; 
         this.nav('view-login'); 
     },
 
-    // --- COPIAS DE SEGURIDAD ---
+    // --- SISTEMA DE COPIAS DE SEGURIDAD ---
     downloadBackup: function() {
         const data = { users: this.users, logs: this.logs };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -102,29 +110,31 @@ const app = {
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                if (confirm("¿Sobrescribir datos actuales?")) {
-                    this.users = data.users; this.logs = data.logs;
-                    this.saveData(); location.reload();
+                if (confirm("¿Sobrescribir datos actuales con esta copia?")) {
+                    this.users = data.users; 
+                    this.logs = data.logs;
+                    this.saveData(); 
+                    location.reload(); // Reinicia para cargar los nuevos datos
                 }
-            } catch(e) { alert("Archivo no válido"); }
+            } catch(e) { 
+                alert("Error en archivo"); 
+            }
         };
         reader.readAsText(event.target.files[0]);
     },
 
-    // --- FILTRADO MENSUAL (REFORZADO) ---
+    // --- FILTRADO DE DATOS ---
     filterLogsByMonth: function(logsArray, inputId) {
-        const filterVal = document.getElementById(inputId).value; // YYYY-MM
+        const filterVal = document.getElementById(inputId).value; // Obtiene el valor YYYY-MM
         if (!filterVal) return logsArray;
         const [year, month] = filterVal.split('-').map(Number);
 
         return logsArray.filter(l => {
-            // Intento 1: Usar timestamp (más fiable)
-            if (l.timestamp) {
+            if (l.timestamp) { // Prioridad por milisegundos
                 const d = new Date(l.timestamp);
                 if (d.getFullYear() === year && (d.getMonth() + 1) === month) return true;
             }
-            // Intento 2: Fallback por texto si no hay timestamp (formato DD/MM/AAAA)
-            if (l.time && l.time.includes('/')) {
+            if (l.time && l.time.includes('/')) { // Fallback por texto
                 const parts = l.time.split(',')[0].split('/');
                 if (parseInt(parts[1]) === month && parseInt(parts[2]) === year) return true;
             }
@@ -132,11 +142,11 @@ const app = {
         });
     },
 
-    // --- EDICIÓN Y BORRADO ---
+    // --- EDICIÓN DE MARCACIONES ---
     editLog: function(timestamp) {
         const log = this.logs.find(l => l.timestamp === timestamp);
         if (!log) return;
-        const newTime = prompt("Editar hora (Ejemplo: 08:30:00 o la fecha completa)", log.time);
+        const newTime = prompt("Editar hora (Ejemplo: DD/MM/AAAA, HH:MM:SS)", log.time);
         if (newTime) {
             log.time = newTime;
             this.saveData();
@@ -144,14 +154,16 @@ const app = {
         }
     },
 
+    // --- BORRADO DE MARCACIONES ---
     deleteLog: function(timestamp) {
-        if (confirm("¿Borrar este registro?")) {
+        if (confirm("¿Borrar este registro definitivamente?")) {
             this.logs = this.logs.filter(l => l.timestamp !== timestamp);
             this.saveData();
             this.refreshCurrentView();
         }
     },
 
+    // Función auxiliar para repintar la pantalla actual tras cambios
     refreshCurrentView: function() {
         const activeView = document.querySelector('.view.active').id;
         this.nav(activeView);
@@ -164,48 +176,71 @@ const app = {
         if (user) this.viewEmployeeDetail(user.id);
     },
 
-    // --- FICHADO (GPS) ---
+    // --- PROCESO DE FICHADO CON GPS ---
     punch: function(type) {
         if (!navigator.geolocation) return alert("GPS no disponible");
         const btn = type === 'ENTRADA' ? document.getElementById('btn-in') : document.getElementById('btn-out');
-        btn.innerText = "Ubicando..."; btn.disabled = true;
+        btn.innerText = "Ubicando..."; 
+        btn.disabled = true;
 
         navigator.geolocation.getCurrentPosition((pos) => {
             const now = new Date();
             this.logs.push({
-                userId: this.currentUser.id, userName: this.currentUser.name,
-                type: type, time: now.toLocaleString(), timestamp: now.getTime(),
+                userId: this.currentUser.id, 
+                userName: this.currentUser.name,
+                type: type, 
+                time: now.toLocaleString(), 
+                timestamp: now.getTime(), // ID único basado en el tiempo
                 coords: [pos.coords.latitude, pos.coords.longitude]
             });
-            this.saveData(); this.renderEmployeePanel();
+            this.saveData(); 
+            this.renderEmployeePanel();
             btn.innerText = type === 'ENTRADA' ? "Fichar entrada" : "Fichar salida";
             btn.disabled = false;
-            alert("Fichaje realizado");
-        }, () => { alert("Error GPS"); btn.disabled = false; }, { enableHighAccuracy: true });
+            alert("Fichaje realizado con éxito");
+        }, () => { 
+            alert("Error GPS: Activa la ubicación"); 
+            btn.disabled = false; 
+        }, { enableHighAccuracy: true });
     },
 
+    // CONVIERTE MILISEGUNDOS EN FORMATO 0h 0m
     formatDuration: function(ms) {
         if (ms <= 0) return "0m";
         const min = Math.floor(ms / 60000);
         return `${Math.floor(min / 60)}h ${min % 60}m`;
     },
 
+    // UNE LAS ENTRADAS CON LAS SALIDAS PARA CALCULAR TIEMPOS
     getPairedLogs: function(logsToProcess) {
         const sorted = [...logsToProcess].sort((a, b) => a.timestamp - b.timestamp);
-        const paired = []; const open = {};
+        const paired = []; 
+        const open = {}; // Auxiliar para encontrar parejas
+
         sorted.forEach(l => {
-            if (l.type === 'ENTRADA') open[l.userId] = l;
-            else {
+            if (l.type === 'ENTRADA') {
+                open[l.userId] = l;
+            } else {
                 const entry = open[l.userId];
-                paired.push({ userName: l.userName, userId: l.userId, entry: entry || null, exit: l, duration: entry ? l.timestamp - entry.timestamp : 0 });
+                paired.push({ 
+                    userName: l.userName, 
+                    userId: l.userId, 
+                    entry: entry || null, 
+                    exit: l, 
+                    duration: entry ? l.timestamp - entry.timestamp : 0 
+                });
                 delete open[l.userId];
             }
         });
-        for (let id in open) paired.push({ userName: open[id].userName, userId: open[id].userId, entry: open[id], exit: null, duration: 0 });
-        return paired.reverse();
+        // Si hay entradas sin salida (empleado trabajando aún)
+        for (let id in open) {
+            paired.push({ userName: open[id].userName, userId: open[id].userId, entry: open[id], exit: null, duration: 0 });
+        }
+        return paired.reverse(); // Mostrar lo más reciente arriba
     },
 
-    // --- RENDERS ---
+    // --- FUNCIONES DE DIBUJADO (RENDERS) ---
+
     renderEmployeePanel: function() {
         const uLogs = this.logs.filter(l => l.userId === this.currentUser.id);
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-emp');
@@ -249,7 +284,7 @@ const app = {
                         ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp})">🗑️</button>` : ''}
                     </div>
                 </div>
-                <small>${p.entry ? 'E: '+p.entry.time.split(',')[1] : '--'} | ${p.exit ? 'S: '+p.exit.time.split(',')[1] : 'En curso'}</small>
+                <small>${p.entry ? 'Entrada: '+p.entry.time.split(',')[1] : '--'} | ${p.exit ? 'Salida: '+p.exit.time.split(',')[1] : 'En curso'}</small>
                 ${p.exit && p.entry ? `<b style="color:var(--primary)">Horas: ${this.formatDuration(p.duration)}</b>` : ''}
             </div>
         `).join('') || '<p style="margin-top:10px">Sin datos para este mes.</p>';
@@ -262,7 +297,7 @@ const app = {
             const uLogs = this.logs.filter(l => l.userId === u.id);
             const isWorking = uLogs.length > 0 && uLogs[uLogs.length-1].type === 'ENTRADA';
             return `<div class="status-item ${isWorking ? 'status-working' : 'status-out'}"><b>${u.name}</b>: ${isWorking ? 'TRABAJANDO' : 'FUERA'}</div>`;
-        }).join('') || 'No hay empleados.';
+        }).join('') || 'Sin empleados.';
     },
 
     renderAdminLogs: function() {
@@ -293,9 +328,10 @@ const app = {
                     <button class="btn-small btn-del" onclick="app.deleteEmployee('${u.id}')">X</button>
                 </div>
             </div>
-        `).join('') || 'Sin empleados.';
+        `).join('') || 'Sin empleados registrados.';
     },
 
+    // --- GESTIÓN DE EMPLEADOS ---
     saveEmployee: function() {
         const name = document.getElementById('new-emp-name').value.trim();
         const pass = document.getElementById('new-emp-pass').value.trim();
@@ -309,7 +345,9 @@ const app = {
             const id = name.toLowerCase().replace(/\s+/g, '');
             this.users.push({ id, name, role: 'employee', pass });
         }
-        this.saveData(); this.resetForm(); this.renderAdminUsers();
+        this.saveData(); 
+        this.resetForm(); 
+        this.renderAdminUsers();
     },
 
     editEmployee: function(id) {
@@ -332,10 +370,12 @@ const app = {
     deleteEmployee: function(id) {
         if(confirm("¿Borrar empleado?")){
             this.users = this.users.filter(u => u.id !== id);
-            this.saveData(); this.renderAdminUsers();
+            this.saveData(); 
+            this.renderAdminUsers();
         }
     },
 
+    // --- EXPORTAR A EXCEL ---
     generateExcel: function() {
         const filterId = this.currentUser.role === 'admin' ? 'filter-date-admin-logs' : 'filter-date-emp';
         const filterVal = document.getElementById(filterId).value;

@@ -125,6 +125,21 @@ button { /* Estilo base de los botones */
     margin: 10px 0; /* Separación vertical */
 }
 
+.btn-success { /* Botón verde para acciones positivas */
+    background-color: var(--success); /* Color verde éxito */
+    color: white; /* Texto blanco */
+}
+
+.btn-danger { /* Botón rojo para salidas o borrados */
+    background-color: var(--danger); /* Color rojo peligro */
+    color: white; /* Texto blanco */
+}
+
+.btn-secondary { /* Botón gris para acciones neutrales */
+    background-color: #6c757d; /* Color gris neutro */
+    color: white; /* Texto blanco */
+}
+
 .badge { /* Etiqueta de estado del empleado */
     display: inline-block; /* Se adapta al texto */
     padding: 5px 15px; /* Relleno interno */

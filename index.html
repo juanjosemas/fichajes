@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"> <!-- Define la codificación de caracteres -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Ajuste para pantallas móviles -->
     <title>Control Horario Pro</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Librería Excel -->
+    <link rel="stylesheet" href="style.css"> <!-- Enlace a los estilos -->
+    <!-- Librería externa para generar archivos Excel desde el navegador -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Fuentes de Google para un diseño profesional -->
     <link href="https://fonts.googleapis.com/css2?family=Lobster&family=Piedra&family=Sriracha&display=swap" rel="stylesheet">
 </head>
 <body>
 
+    <!-- MENÚ LATERAL (SIDEBAR) -->
     <div id="sidebar" class="sidebar">
         <div class="sidebar-header">
             <h2 id="menu-user-name">Usuario</h2>
@@ -19,6 +21,8 @@
         <nav class="sidebar-nav">
             <a href="#" onclick="app.nav('view-home')">🏠 Inicio</a>
             <a href="#" onclick="app.nav('view-employee')">⏱️ Fichar ahora</a>
+            
+            <!-- Bloque visible solo para el administrador -->
             <div id="admin-only-menu">
                 <hr>
                 <a href="#" onclick="app.nav('view-admin-status')">🟢 Estado en vivo</a>
@@ -28,25 +32,34 @@
                 <hr>
                 <a href="#" onclick="app.downloadBackup()">💾 Guardar Copia</a>
                 <a href="#" onclick="document.getElementById('import-file').click()">📂 Restaurar Copia</a>
+                <!-- Input oculto para subir el archivo de copia de seguridad -->
                 <input type="file" id="import-file" style="display:none" onchange="app.importBackup(event)">
                 <a href="#" onclick="app.generateExcel()">📊 Exportar Excel</a>
             </div>
+
             <hr>
             <a href="#" onclick="app.logout()" class="logout-link">🚪 Cerrar sesión</a>
         </nav>
     </div>
 
+    <!-- Capa oscura que sale cuando el menú está abierto -->
     <div id="overlay" onclick="app.toggleMenu()"></div>
 
     <div class="app-container">
         <header>
-            <div class="header-side"><button id="menu-btn" onclick="app.toggleMenu()" style="display:none;">☰</button></div>
+            <div class="header-side">
+                <!-- Botón de menú tipo hamburguesa -->
+                <button id="menu-btn" onclick="app.toggleMenu()" style="display:none;">☰</button>
+            </div>
             <h1 id="header-title">Control Horario</h1>
             <div class="header-side"></div>
+            <!-- Icono personalizado en la esquina superior derecha -->
             <h2><u><i><img src="img/Juanjo.ico" class="ico" width="35"></i></u></h2>
         </header>
 
-        <!-- LOGIN -->
+        <!-- PANTALLAS DE LA APLICACIÓN -->
+
+        <!-- Pantalla de Inicio de Sesión -->
         <section id="view-login" class="view active">
             <div class="card">
                 <div class="logo-icon">🕒</div>
@@ -57,7 +70,7 @@
             </div>
         </section>
 
-        <!-- HOME -->
+        <!-- Pantalla de Bienvenida -->
         <section id="view-home" class="view">
             <div class="card">
                 <h2>¡Hola!</h2>
@@ -66,7 +79,7 @@
             </div>
         </section>
 
-        <!-- EMPLEADO -->
+        <!-- Pantalla para que el Empleado fiche -->
         <section id="view-employee" class="view">
             <div class="card">
                 <div id="status-badge" class="badge">Estado</div>
@@ -76,49 +89,68 @@
             </div>
             <div class="card">
                 <h3>Tus registros</h3>
-                <div class="filter-row"><label>Mes:</label><input type="month" id="filter-date-emp" onchange="app.renderEmployeePanel()"></div>
+                <div class="filter-row">
+                    <label>Mes:</label>
+                    <input type="month" id="filter-date-emp" onchange="app.renderEmployeePanel()">
+                </div>
                 <div id="emp-history"></div>
             </div>
         </section>
 
-        <!-- GESTIÓN EMPLEADOS -->
+        <!-- Pantalla de Gestión de Usuarios (Admin) -->
         <section id="view-admin-employees" class="view">
             <div class="card">
                 <h3 id="form-title">Crear empleado</h3>
-                <input type="hidden" id="edit-id">
-                <input type="text" id="new-emp-name" placeholder="Nombre">
-                <input type="password" id="new-emp-pass" placeholder="Clave">
+                <input type="hidden" id="edit-id"> <!-- Input invisible para saber si editamos un usuario -->
+                <input type="text" id="new-emp-name" placeholder="Nombre completo">
+                <input type="password" id="new-emp-pass" placeholder="Contraseña">
                 <button class="btn-success" onclick="app.saveEmployee()">Registrar</button>
                 <button id="btn-action-cancel" class="btn-secondary" style="display:none;margin-top:5px" onclick="app.resetForm()">Cancelar</button>
             </div>
-            <div class="card"><h3>Lista personal</h3><div id="admin-users-list"></div></div>
+            <div class="card">
+                <h3>Lista personal</h3>
+                <div id="admin-users-list"></div>
+            </div>
         </section>
 
-        <!-- REGISTROS POR EMPLEADO -->
+        <!-- Pantalla de Historial Filtrado por Empleado (Admin) -->
         <section id="view-admin-by-employee" class="view">
-            <div class="card"><h3>Seleccionar empleado</h3><div id="admin-select-employee-list"></div></div>
+            <div class="card">
+                <h3>Seleccionar empleado</h3>
+                <div id="admin-select-employee-list"></div>
+            </div>
             <div id="admin-employee-detail-card" class="card" style="display:none;">
                 <h3 id="detail-employee-name">...</h3>
-                <div class="filter-row"><label>Mes:</label><input type="month" id="filter-date-admin-detail" onchange="app.refreshCurrentDetail()"></div>
+                <div class="filter-row">
+                    <label>Mes:</label>
+                    <input type="month" id="filter-date-admin-detail" onchange="app.refreshCurrentDetail()">
+                </div>
                 <div id="admin-employee-logs-detail"></div>
                 <button class="btn-secondary" onclick="document.getElementById('admin-employee-detail-card').style.display='none'">Cerrar</button>
             </div>
         </section>
 
-        <!-- ESTADO EN VIVO -->
+        <!-- Pantalla de Estado en Vivo (Admin) -->
         <section id="view-admin-status" class="view">
-            <div class="card"><h3>🟢 En vivo</h3><div id="admin-status-list"></div></div>
+            <div class="card">
+                <h3>🟢 En vivo</h3>
+                <div id="admin-status-list"></div>
+            </div>
         </section>
 
-        <!-- HISTORIAL GLOBAL -->
+        <!-- Pantalla de Historial Global (Admin) -->
         <section id="view-admin-logs" class="view">
             <div class="card">
-                <h3>Historial global</h3>
-                <div class="filter-row"><label>Filtrar mes:</label><input type="month" id="filter-date-admin-logs" onchange="app.renderAdminLogs()"></div>
+                <h3>Historial global completo</h3>
+                <div class="filter-row">
+                    <label>Filtrar mes:</label>
+                    <input type="month" id="filter-date-admin-logs" onchange="app.renderAdminLogs()">
+                </div>
                 <div id="admin-logs-list"></div>
             </div>
         </section>
     </div>
-    <script src="script.js"></script>
+
+    <script src="script.js"></script> <!-- Enlace a la lógica JS -->
 </body>
 </html>

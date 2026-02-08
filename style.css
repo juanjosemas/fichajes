@@ -72,17 +72,19 @@ h2, h3 { /* Estilos para subtítulos */
     margin-bottom: 15px; /* Separación con la siguiente tarjeta */
     box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Sombra de profundidad */
     border: 1px solid rgba(255, 255, 255, 0.3); /* Borde blanco muy fino */
+    position: relative; /* Contexto de capas */
+    z-index: 1; /* Capa base */
 }
 
 .filter-row { /* Fila para los selectores de mes */
-    display: flex; /* Diseño en línea */
+    display: flex; /* Alineación flexible */
     justify-content: center; /* Centrado horizontal */
     align-items: center; /* Centrado vertical */
-    gap: 10px; /* Espacio entre el texto y el selector */
-    margin-bottom: 10px; /* Margen inferior */
-    background: rgba(255,255,255,0.2); /* Fondo sutil para el filtro */
-    padding: 8px; /* Relleno interno */
-    border-radius: 8px; /* Redondeado de esquinas */
+    gap: 10px; /* Espacio entre elementos */
+    margin-bottom: 10px; /* Separación inferior */
+    background: rgba(255,255,255,0.2); /* Fondo suave */
+    padding: 8px; /* Relleno */
+    border-radius: 8px; /* Redondeado */
 }
 
 .logo-icon { /* Icono del reloj en login */
@@ -91,22 +93,32 @@ h2, h3 { /* Estilos para subtítulos */
     display: block; /* Ocupa su propia línea */
 }
 
-input { /* Campos de texto y fechas */
-    width: 100%; /* Ocupa todo el ancho de su tarjeta */
-    padding: 12px; /* Espacio para escribir cómodamente */
-    margin: 6px 0; /* Separación entre inputs */
-    border: 1px solid rgba(0,0,0,0.1); /* Borde casi invisible */
-    border-radius: 8px; /* Redondeado de bordes */
-    box-sizing: border-box; /* El padding no aumenta el tamaño total */
-    font-size: 1rem; /* Tamaño de letra legible */
+input { /* Estilo de los campos de escritura (CORRECCIÓN OPPO) */
+    width: 100%; /* Ocupa todo el ancho */
+    padding: 14px; /* Relleno amplio para el dedo */
+    margin: 8px 0; /* Separación vertical */
+    border: 2px solid rgba(0,0,0,0.1); /* Borde sutil */
+    border-radius: 8px; /* Redondeado */
+    box-sizing: border-box; /* Padding incluido en el ancho */
+    font-size: 1.1rem; /* Letra grande */
     font-family: Sriracha; /* Fuente manuscrita */
-    background: rgba(255, 255, 255, 0.85); /* Fondo casi opaco para leer bien lo escrito */
+    background: rgba(255, 255, 255, 0.9); /* Casi opaco para que Android detecte el campo */
+    color: #000; /* Texto negro */
+    position: relative; /* Contexto relativo */
+    z-index: 10; /* Siempre por encima para permitir clics */
+}
+
+input:focus { /* Cuando el usuario está escribiendo */
+    background: #ffffff; /* Fondo blanco sólido */
+    outline: none; /* Quita borde de sistema */
+    border-color: var(--primary); /* Borde azul */
+    box-shadow: 0 0 10px rgba(26, 115, 232, 0.4); /* Resplandor */
 }
 
 button { /* Estilo base de los botones */
     width: 100%; /* Ancho completo */
-    padding: 12px; /* Grosor del botón */
-    border: none; /* Elimina el borde de sistema */
+    padding: 12px; /* Grosor */
+    border: none; /* Sin bordes */
     border-radius: 8px; /* Redondeado de esquinas */
     font-weight: bold; /* Texto en negrita */
     cursor: pointer; /* Cambia el ratón a mano */
@@ -125,18 +137,18 @@ button { /* Estilo base de los botones */
     margin: 10px 0; /* Separación vertical */
 }
 
-.btn-success { /* Botón verde para acciones positivas */
-    background-color: var(--success); /* Color verde éxito */
+.btn-success { /* Botón verde para entradas */
+    background-color: var(--success); /* Color éxito */
     color: white; /* Texto blanco */
 }
 
-.btn-danger { /* Botón rojo para salidas o borrados */
-    background-color: var(--danger); /* Color rojo peligro */
+.btn-danger { /* Botón rojo para salidas */
+    background-color: var(--danger); /* Color peligro */
     color: white; /* Texto blanco */
 }
 
-.btn-secondary { /* Botón gris para acciones neutrales */
-    background-color: #6c757d; /* Color gris neutro */
+.btn-secondary { /* Botón gris neutro */
+    background-color: #6c757d; /* Color gris */
     color: white; /* Texto blanco */
 }
 
@@ -175,34 +187,48 @@ button { /* Estilo base de los botones */
     margin-left: 5px; /* Separación lateral */
 }
 
-.ico { /* Imagen del logo circular */
-    border-radius: 50%; /* Forma circular */
-    margin: 10px 10px 10px -10px; /* Posicionamiento en cabecera */
-    animation: logo 3s ease-in-out; /* Animación de rotación */
-    background-color: black; /* Fondo negro */
-    border: 2px solid red; /* Borde rojo */
-    vertical-align: middle; /* Centrado vertical con el texto */
+.status-item { /* Fila de estado en vivo */
+    padding: 12px; /* Relleno */
+    border-radius: 8px; /* Redondeado */
+    margin-bottom: 10px; /* Separación */
+    border-left: 5px solid #ccc; /* Barra gris lateral */
 }
 
-@keyframes logo { /* Animación del logo al cargar */
-    from { opacity: 0; transform: scale(0.5) rotate(0deg); } /* Inicio: pequeño y transparente */
-    to { opacity: 1; transform: scale(1) rotate(1440deg); } /* Fin: tamaño real y girado */
+.status-working { /* Color cuando trabaja */
+    border-left-color: var(--success); /* Barra verde */
+    background: rgba(0, 200, 83, 0.1); /* Fondo verde suave */
+}
+
+.ico { /* Imagen del logo circular */
+    border-radius: 50%; /* Forma circular */
+    margin: 10px 10px 10px -10px; /* Ajuste en cabecera */
+    animation: logo 3s ease-in-out; /* Animación de 3s */
+    background-color: black; /* Fondo negro */
+    border: 2px solid red; /* Borde rojo */
+    vertical-align: middle; /* Alineado con texto */
+}
+
+@keyframes logo { /* Definición animación rotación */
+    from { opacity: 0; transform: scale(0.5) rotate(0deg); }
+    to { opacity: 1; transform: scale(1) rotate(1440deg); }
 }
 
 .sidebar { /* Menú lateral oculto */
-    position: fixed; /* Fijo en pantalla */
-    left: -280px; /* Escondido a la izquierda */
-    top: 0; /* Empieza arriba */
-    width: 280px; /* Ancho del menú */
-    height: 100%; /* Alto total */
+    position: fixed; /* Fijo */
+    left: -280px; /* Fuera a la izquierda */
+    top: 0; /* Arriba */
+    width: 280px; /* Ancho */
+    height: 100%; /* Todo el alto */
     background: var(--dark); /* Gris oscuro */
     color: white; /* Letra blanca */
     transition: 0.3s ease; /* Movimiento suave */
     z-index: 1001; /* Sobre todo el contenido */
+    visibility: hidden; /* Evita bloqueos táctiles */
 }
 
-.sidebar.active { /* Clase cuando el menú está abierto */
-    left: 0; /* Se desplaza al borde visible */
+.sidebar.active { /* Sidebar visible */
+    left: 0; /* Posición 0 */
+    visibility: visible; /* Se hace presente */
 }
 
 #overlay { /* Sombra negra al abrir menú */

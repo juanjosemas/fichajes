@@ -1,5 +1,5 @@
 /** 
- * CONFIGURACIÓN DE FIREBASE (Copiada exactamente de tu consola)
+ * CONFIGURACIÓN DE FIREBASE (Datos reales de tu consola)
  **/
 const firebaseConfig = {
     apiKey: "AIzaSyCeSB3MXhuKiJ9XANBfHzwEWU1e8mlqB6k",
@@ -30,22 +30,22 @@ const app = {
     init: function() {
         // 1. ESCUCHA EN TIEMPO REAL: Firebase nos envía los datos cada vez que hay un cambio
         db.ref('/').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                this.users = data.users || [];
-                this.logs = data.logs || [];
-                
-                // Si la nube está vacía, creamos al admin inicial
-                if (this.users.length === 0) {
-                    this.users = [{ id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' }];
-                    this.saveData(); 
-                }
-                
-                // Actualizamos la pantalla actual para mostrar los datos recién bajados
-                this.refreshCurrentView();
+            const data = snapshot.val() || {}; // Si es null (vacío), usamos un objeto vacío
+            
+            // Cargamos usuarios y logs, o arrays vacíos si no existen
+            this.users = data.users || [];
+            this.logs = data.logs || [];
+            
+            // CORRECCIÓN: Si no hay ningún usuario (base de datos vacía), creamos el admin ahora mismo
+            if (this.users.length === 0) {
+                this.users = [{ id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' }];
+                this.saveData(); // Lo subimos a la nube inmediatamente
             }
+            
+            // Actualizamos la pantalla actual para mostrar los datos recién bajados
+            this.refreshCurrentView();
         }, (error) => {
-            alert("Error de Firebase: Revisa que las REGLAS de Realtime Database estén en 'true'.");
+            alert("Error de conexión: Revisa internet y las reglas de Firebase.");
         });
 
         // 2. CONFIGURACIÓN DE FILTROS: Mes actual por defecto
@@ -72,7 +72,7 @@ const app = {
         db.ref('/').set({
             users: this.users,
             logs: this.logs
-        }).catch(e => alert("Error al subir a la nube: " + e.message));
+        }).catch(e => alert("Error al guardar: " + e.message));
     },
 
     // CONTROL DEL MENÚ SIDEBAR
@@ -81,14 +81,14 @@ const app = {
         document.getElementById('overlay').style.display = isActive ? 'block' : 'none'; 
     },
 
-    // NAVEGACIÓN ENTRE PANTALLAS
+    // NAVEGACIÓN ENTRE VISTAS
     nav: function(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
         const targetView = document.getElementById(viewId);
         if(targetView) targetView.classList.add('active'); 
         if (document.getElementById('sidebar').classList.contains('active')) this.toggleMenu(); 
         
-        // Renderizamos los datos de la vista elegida
+        // Renderizamos según la pantalla
         if(viewId === 'view-admin-status') this.renderAdminStatus(); 
         if(viewId === 'view-admin-employees') this.renderAdminUsers(); 
         if(viewId === 'view-admin-logs') this.renderAdminLogs(); 
@@ -100,6 +100,8 @@ const app = {
     login: function() {
         const u = document.getElementById('login-user').value.trim().toLowerCase(); 
         const p = document.getElementById('login-pass').value.trim(); 
+        
+        // Buscamos en la lista sincronizada de la nube
         const user = this.users.find(user => user.id === u || user.name.toLowerCase() === u);
 
         if (user && user.pass === p) { 
@@ -107,7 +109,9 @@ const app = {
             localStorage.setItem('session', JSON.stringify(this.currentUser));
             this.setupUI(user); 
             this.nav('view-home'); 
-        } else alert("Acceso denegado"); 
+        } else {
+            alert("Acceso denegado: usuario o clave incorrectos."); 
+        }
     },
 
     setupUI: function(user) {
@@ -125,12 +129,12 @@ const app = {
         this.nav('view-login'); 
     },
 
-    // --- SISTEMA DE FICHADO (GPS + NUBE) ---
+    // --- FICHADO GPS ---
     punch: function(type) {
         if (!navigator.geolocation) return alert("GPS no disponible");
         const btn = type === 'ENTRADA' ? document.getElementById('btn-in') : document.getElementById('btn-out');
         const originalText = btn.innerText;
-        btn.innerText = "Buscando GPS..."; btn.disabled = true;
+        btn.innerText = "Ubicando..."; btn.disabled = true;
 
         navigator.geolocation.getCurrentPosition((pos) => {
             const now = new Date();
@@ -144,13 +148,13 @@ const app = {
             };
 
             this.logs.push(newLog);
-            this.saveData(); // Sincroniza inmediatamente con Google Firebase
+            this.saveData(); // Sincroniza
             
             btn.disabled = false;
             btn.innerText = originalText;
-            alert("Fichaje guardado y sincronizado");
+            alert("Fichaje realizado y guardado.");
         }, (err) => { 
-            alert("Error GPS: Activa la ubicación en tu móvil"); 
+            alert("Error GPS: Activa la ubicación."); 
             btn.disabled = false; 
             btn.innerText = originalText;
         }, { enableHighAccuracy: true, timeout: 10000 });
@@ -162,7 +166,7 @@ const app = {
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `Copia_Nube_${new Date().toLocaleDateString()}.json`;
+        a.download = `Backup_Nube_${new Date().toLocaleDateString()}.json`;
         a.click();
     },
 
@@ -171,7 +175,7 @@ const app = {
         reader.onload = (e) => {
             try {
                 const data = JSON.parse(e.target.result);
-                if (confirm("¿Sobrescribir datos de la NUBE con este archivo?")) {
+                if (confirm("¿Sobrescribir datos de la NUBE con esta copia?")) {
                     this.users = data.users; this.logs = data.logs;
                     this.saveData(); 
                 }
@@ -194,19 +198,19 @@ const app = {
                 if (isNaN(nD.getTime())) throw new Error();
                 log.time = newTimeStr;
                 log.timestamp = nD.getTime();
-                this.saveData(); // Guarda la corrección en la nube
+                this.saveData(); 
             } catch (e) { alert("Formato incorrecto"); }
         }
     },
 
     deleteLog: function(timestamp) {
-        if (confirm("¿Borrar definitivamente de la nube?")) {
+        if (confirm("¿Borrar definitivamente?")) {
             this.logs = this.logs.filter(l => l.timestamp !== timestamp);
             this.saveData();
         }
     },
 
-    // --- FUNCIONES AUXILIARES ---
+    // --- CÁLCULOS Y FILTROS ---
     formatDuration: function(ms) {
         if (ms <= 0) return "0m";
         const min = Math.floor(ms / 60000);
@@ -249,13 +253,14 @@ const app = {
         }
     },
 
-    // --- RENDERS (DIBUJADO) ---
+    // --- RENDERS ---
 
     renderEmployeePanel: function() {
         const uLogs = this.logs.filter(l => l.userId === this.currentUser.id);
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-emp');
         const paired = this.getPairedLogs(filtered);
-        const isWorking = uLogs.length > 0 && uLogs[uLogs.length-1].type === 'ENTRADA';
+        const lastLog = uLogs[uLogs.length - 1];
+        const isWorking = lastLog && lastLog.type === 'ENTRADA';
         
         document.getElementById('status-badge').innerText = isWorking ? 'TRABAJANDO' : 'FUERA';
         document.getElementById('status-badge').style.background = isWorking ? 'var(--success)' : 'var(--danger)';
@@ -293,10 +298,10 @@ const app = {
                         ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp})">🗑️</button>` : ''}
                     </div>
                 </div>
-                <small>${p.entry ? 'E: '+p.entry.time.split(',')[1] : '--'} | ${p.exit ? 'S: '+p.exit.time.split(',')[1] : 'En curso'}</small>
+                <small>${p.entry ? 'Entrada: '+p.entry.time.split(',')[1] : '--'} | ${p.exit ? 'Salida: '+p.exit.time.split(',')[1] : 'En curso'}</small>
                 ${p.exit && p.entry ? `<b style="color:var(--primary)">Horas: ${this.formatDuration(p.duration)}</b>` : ''}
             </div>
-        `).join('') || '<p style="margin-top:10px">Sin datos para este mes.</p>';
+        `).join('') || '<p>Sin datos.</p>';
         document.getElementById('admin-employee-detail-card').style.display = 'block';
     },
 
@@ -306,7 +311,7 @@ const app = {
             const uLogs = this.logs.filter(l => l.userId === u.id);
             const isWorking = uLogs.length > 0 && uLogs[uLogs.length-1].type === 'ENTRADA';
             return `<div class="status-item ${isWorking ? 'status-working' : 'status-out'}"><b>${u.name}</b>: ${isWorking ? 'TRABAJANDO' : 'FUERA'}</div>`;
-        }).join('') || 'Sin empleados.';
+        }).join('') || 'Sin empleados registrados.';
     },
 
     renderAdminLogs: function() {
@@ -324,7 +329,7 @@ const app = {
                 <small>E: ${p.entry ? p.entry.time : '--'} | S: ${p.exit ? p.exit.time : '...'}</small>
                 ${p.exit && p.entry ? `<b style="color:var(--success)">⏱️ ${this.formatDuration(p.duration)}</b>` : ''}
             </div>
-        `).join('') || '<p style="margin-top:10px">Sin datos este mes.</p>';
+        `).join('') || '<p>Sin datos este mes.</p>';
     },
 
     renderAdminUsers: function() {
@@ -341,9 +346,12 @@ const app = {
     },
 
     saveEmployee: function() {
-        const name = document.getElementById('new-emp-name').value.trim();
-        const pass = document.getElementById('new-emp-pass').value.trim();
+        const nameInput = document.getElementById('new-emp-name');
+        const passInput = document.getElementById('new-emp-pass');
         const editId = document.getElementById('edit-id').value;
+        const name = nameInput.value.trim();
+        const pass = passInput.value.trim();
+        
         if(!name || !pass) return alert("Faltan datos");
         
         if(editId){
@@ -353,7 +361,8 @@ const app = {
             const id = name.toLowerCase().replace(/\s+/g, '');
             this.users.push({ id, name, role: 'employee', pass });
         }
-        this.saveData(); this.resetForm();
+        this.saveData(); 
+        this.resetForm();
     },
 
     editEmployee: function(id) {
@@ -380,7 +389,6 @@ const app = {
         }
     },
 
-    // EXCEL
     generateExcel: function() {
         const filterId = this.currentUser.role === 'admin' ? 'filter-date-admin-logs' : 'filter-date-emp';
         const filterVal = document.getElementById(filterId).value;
@@ -402,4 +410,5 @@ const app = {
     }
 };
 
+// ARRANQUE
 window.onload = () => app.init();

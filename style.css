@@ -65,7 +65,7 @@ h3 { /* Estilos para títulos dentro de las cajas */
 
 .view { /* Contenedor de cada pantalla de la app */
     display: none; /* Oculta la pantalla por defecto */
-    padding: 10px; /* Margen interno reducido para que las cajas lleguen más al borde */
+    padding: 10px; /* Margen interno reducido */
     text-align: center; /* Centra el contenido interior */
 }
 
@@ -77,7 +77,7 @@ h3 { /* Estilos para títulos dentro de las cajas */
     background: rgba(255, 255, 255, 0.1); /* Transparencia de 0.1 mantenida */
     backdrop-filter: blur(12px); /* Desenfoque de fondo */
     -webkit-backdrop-filter: blur(12px); /* Soporte Safari */
-    padding: 10px; /* Relleno interno reducido de 15px a 10px para compactar */
+    padding: 10px; /* Relleno interno reducido */
     border-radius: 12px; /* Redondeado de las esquinas */
     margin-bottom: 10px; /* Separación reducida entre tarjetas */
     box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Sombra de profundidad */
@@ -105,7 +105,7 @@ h3 { /* Estilos para títulos dentro de las cajas */
 
 input { /* Estilo de los campos de escritura */
     width: 100%; /* Ocupa todo el ancho */
-    padding: 12px; /* Relleno ligeramente reducido para compactar altura */
+    padding: 12px; /* Relleno ligeramente reducido */
     margin: 6px 0; /* Separación vertical */
     border: 1px solid rgba(0,0,0,0.1); /* Borde sutil */
     border-radius: 8px; /* Redondeado */
@@ -115,7 +115,7 @@ input { /* Estilo de los campos de escritura */
     background: rgba(255, 255, 255, 0.9); /* Casi blanco opaco para visibilidad */
     color: #000; /* Texto negro */
     position: relative; /* Contexto relativo */
-    z-index: 10; /* Por encima de desenfoques para permitir clics */
+    z-index: 10; /* Por encima de desenfoques */
 }
 
 input:focus { /* Al escribir en el campo */
@@ -245,7 +245,7 @@ button { /* Estilo base de los botones */
     color: #e8eaed; /* Gris claro */
     padding: 12px 20px; /* Área de toque ajustada */
     text-decoration: none; /* Quita subrayado */
-    display: block; /* Bloque completo */
+    display: block; /* Ocupa toda la fila */
     border-bottom: 1px solid rgba(255,255,255,0.05); /* Separador sutil */
     font-family: Piedra; /* Fuente decorativa */
 }

@@ -12,38 +12,34 @@ const firebaseConfig = {
     measurementId: "G-NTBW1YL7KP"
 };
 
-// Inicializamos la conexión con Firebase
+// Inicializamos Firebase
 try {
     firebase.initializeApp(firebaseConfig);
     var db = firebase.database(); 
 } catch (e) {
-    console.error("Error al conectar Firebase: ", e);
+    console.error("Error Firebase: ", e);
 }
 
-/** OBJETO PRINCIPAL DE LA APP **/
+/** OBJETO PRINCIPAL **/
 const app = {
-    users: [], // Lista de empleados sincronizada
-    logs: [], // Historial de fichajes sincronizado
-    currentUser: null, // Usuario logueado en este móvil
+    users: [], 
+    logs: [], 
+    currentUser: null, 
 
-    // FUNCIÓN DE INICIO: Se ejecuta al abrir la app
+    // INICIO
     init: function() {
-        // Escucha en tiempo real: Firebase nos envía los datos cuando hay cambios
         db.ref('/').on('value', (snapshot) => {
             const data = snapshot.val() || {}; 
             this.users = data.users || [];
             this.logs = data.logs || [];
-            
-            // Si la base de datos está vacía, creamos al admin inicial
             if (this.users.length === 0) {
                 this.users = [{ id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' }];
                 this.saveData(); 
             }
-            
             this.refreshCurrentView();
         });
 
-        // Configuración de los filtros de fecha al mes actual por defecto
+        // Mes actual por defecto al cargar
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         setTimeout(() => {
@@ -53,7 +49,6 @@ const app = {
             });
         }, 300);
 
-        // Persistencia de sesión
         const savedSession = localStorage.getItem('session');
         if (savedSession) {
             this.currentUser = JSON.parse(savedSession);
@@ -62,21 +57,15 @@ const app = {
         }
     },
 
-    // GUARDA LOS DATOS EN LA NUBE
     saveData: function() {
-        db.ref('/').set({
-            users: this.users,
-            logs: this.logs
-        });
+        db.ref('/').set({ users: this.users, logs: this.logs });
     },
 
-    // CONTROL DEL MENÚ SIDEBAR
     toggleMenu: function() {
         const isActive = document.getElementById('sidebar').classList.toggle('active'); 
         document.getElementById('overlay').style.display = isActive ? 'block' : 'none'; 
     },
 
-    // NAVEGACIÓN ENTRE PANTALLAS
     nav: function(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
         const targetView = document.getElementById(viewId);
@@ -90,12 +79,10 @@ const app = {
         if(viewId === 'view-employee') this.renderEmployeePanel(); 
     },
 
-    // LOGIN
     login: function() {
         const u = document.getElementById('login-user').value.trim().toLowerCase(); 
         const p = document.getElementById('login-pass').value.trim(); 
         const user = this.users.find(user => user.id === u || user.name.toLowerCase() === u);
-
         if (user && user.pass === p) { 
             this.currentUser = user; 
             localStorage.setItem('session', JSON.stringify(this.currentUser));
@@ -119,35 +106,40 @@ const app = {
         this.nav('view-login'); 
     },
 
-    // --- SISTEMA DE FICHADO (GPS) ---
+    // FUNCIÓN PARA QUITAR SEGUNDOS
+    formatTimeDisplay: function(timeStr) {
+        if (!timeStr) return "--:--";
+        const parts = timeStr.split(', ');
+        if (parts.length < 2) return timeStr;
+        const timePart = parts[1];
+        const timeParts = timePart.split(':');
+        if (timeParts.length < 2) return timePart;
+        return `${timeParts[0]}:${timeParts[1]}`; 
+    },
+
     punch: function(type) {
         if (!navigator.geolocation) return alert("GPS no disponible");
         const btn = type === 'ENTRADA' ? document.getElementById('btn-in') : document.getElementById('btn-out');
         const originalText = btn.innerText;
         btn.innerText = "Ubicando..."; btn.disabled = true;
-
         navigator.geolocation.getCurrentPosition((pos) => {
             const now = new Date();
             const newLog = {
-                userId: this.currentUser.id, 
-                userName: this.currentUser.name,
-                type: type, 
-                time: now.toLocaleString(), 
-                timestamp: now.getTime(),
+                userId: this.currentUser.id, userName: this.currentUser.name,
+                type: type, time: now.toLocaleString(), timestamp: now.getTime(),
                 coords: [pos.coords.latitude, pos.coords.longitude]
             };
             this.logs.push(newLog);
             this.saveData(); 
             btn.disabled = false;
             btn.innerText = originalText;
-            alert("Fichaje guardado y sincronizado");
+            alert("Fichaje guardado correctamente.");
         }, (err) => { 
             alert("Error GPS: Activa la ubicación"); 
             btn.disabled = false; btn.innerText = originalText;
         }, { enableHighAccuracy: true, timeout: 10000 });
     },
 
-    // --- EDICIÓN Y BORRADO ---
     editLog: function(timestamp) {
         const log = this.logs.find(l => l.timestamp === timestamp);
         if (!log) return;
@@ -173,35 +165,6 @@ const app = {
         }
     },
 
-    // --- FILTRADO MENSUAL ---
-    filterLogsByMonth: function(logsArray, inputId) {
-        const el = document.getElementById(inputId);
-        if(!el || !el.value) return logsArray;
-        const [year, month] = el.value.split('-').map(Number);
-        return logsArray.filter(l => {
-            const d = new Date(l.timestamp);
-            return d.getFullYear() === year && (d.getMonth() + 1) === month;
-        });
-    },
-
-    // --- FUNCIONES DE REFRESCO (ESTA ERA LA QUE FALTABA) ---
-    refreshCurrentDetail: function() {
-        const title = document.getElementById('detail-employee-name').innerText;
-        const empName = title.replace('Jornadas de ', '');
-        const user = this.users.find(u => u.name === empName);
-        if (user) this.viewEmployeeDetail(user.id);
-    },
-
-    refreshCurrentView: function() {
-        const active = document.querySelector('.view.active');
-        if (active) this.nav(active.id);
-        const detailCard = document.getElementById('admin-employee-detail-card');
-        if (detailCard && detailCard.style.display === 'block') {
-            this.refreshCurrentDetail();
-        }
-    },
-
-    // --- RENDERS ---
     formatDuration: function(ms) {
         if (ms <= 0) return "0m";
         const min = Math.floor(ms / 60000);
@@ -223,6 +186,34 @@ const app = {
         return paired.reverse();
     },
 
+    filterLogsByMonth: function(logsArray, inputId) {
+        const el = document.getElementById(inputId);
+        if(!el || !el.value) return logsArray; 
+        const [year, month] = el.value.split('-').map(Number);
+        return logsArray.filter(l => {
+            const d = new Date(l.timestamp);
+            return d.getFullYear() === year && (d.getMonth() + 1) === month;
+        });
+    },
+
+    // REFRESCAR VISTA ACTUAL
+    refreshCurrentView: function() {
+        const active = document.querySelector('.view.active');
+        if (active) this.nav(active.id);
+        const detailCard = document.getElementById('admin-employee-detail-card');
+        if (detailCard && detailCard.style.display === 'block') {
+            this.refreshCurrentDetail();
+        }
+    },
+
+    // --- FUNCIÓN CORREGIDA: REFRESCAR DETALLE DE EMPLEADO ---
+    refreshCurrentDetail: function() {
+        const title = document.getElementById('detail-employee-name').innerText;
+        const empName = title.replace('Jornadas de ', '');
+        const user = this.users.find(u => u.name === empName);
+        if (user) this.viewEmployeeDetail(user.id);
+    },
+
     renderEmployeePanel: function() {
         const uLogs = this.logs.filter(l => l.userId === this.currentUser.id);
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-emp');
@@ -232,12 +223,22 @@ const app = {
         document.getElementById('status-badge').style.background = isWorking ? 'var(--success)' : 'var(--danger)';
         document.getElementById('btn-in').style.display = isWorking ? 'none' : 'block';
         document.getElementById('btn-out').style.display = isWorking ? 'block' : 'none';
-        document.getElementById('emp-history').innerHTML = paired.map(p => `<div class="user-row"><b>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</b><small>${p.entry ? 'E: '+p.entry.time.split(',')[1] : '--'} | ${p.exit ? 'S: '+p.exit.time.split(',')[1] : '...'}</small>${p.exit && p.entry ? `<b style="color:var(--primary)">Total: ${this.formatDuration(p.duration)}</b>` : ''}<div style="margin-top:5px">${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}</div></div>`).join('') || '<p>Sin registros este mes.</p>';
+        document.getElementById('emp-history').innerHTML = paired.map(p => `
+            <div class="user-row">
+                <b>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</b>
+                <small>${p.entry ? 'E: ' + this.formatTimeDisplay(p.entry.time) : '--'} | ${p.exit ? 'S: ' + this.formatTimeDisplay(p.exit.time) : '...'}</small>
+                ${p.exit && p.entry ? `<b style="color:var(--primary)">Total: ${this.formatDuration(p.duration)}</b>` : ''}
+                <div style="margin-top:5px">
+                    ${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}
+                    ${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}
+                </div>
+            </div>
+        `).join('') || '<p style="margin-top:10px">Sin registros este mes.</p>';
     },
 
     renderAdminByEmployee: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
-        document.getElementById('admin-select-employee-list').innerHTML = emps.map(u => `<button class="btn-user-select" onclick="app.viewEmployeeDetail('${u.id}')">👤 ${u.name}</button>`).join('') || 'No hay empleados.';
+        document.getElementById('admin-select-employee-list').innerHTML = emps.map(u => `<button class="btn-user-select" onclick="app.viewEmployeeDetail('${u.id}')">👤 ${u.name}</button>`).join('') || 'No hay empleados registrados.';
     },
 
     viewEmployeeDetail: function(userId) {
@@ -246,7 +247,23 @@ const app = {
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-admin-detail');
         const paired = this.getPairedLogs(filtered);
         document.getElementById('detail-employee-name').innerText = `Jornadas de ${user.name}`;
-        document.getElementById('admin-employee-logs-detail').innerHTML = paired.map(p => `<div class="user-row"><div style="display:flex; justify-content:space-between; align-items:center; width:100%"><b>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</b><div>${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp})">🗑️</button>` : ''}${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp})">🗑️</button>` : ''}</div></div><small>${p.entry ? 'E: '+p.entry.time.split(',')[1] : '--'} | ${p.exit ? 'S: '+p.exit.time.split(',')[1] : 'En curso'}</small>${p.exit && p.entry ? `<b style="color:var(--primary)">Horas: ${this.formatDuration(p.duration)}</b>` : ''}<div style="margin-top:5px">${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}</div></div>`).join('') || '<p>Sin datos este mes.</p>';
+        document.getElementById('admin-employee-logs-detail').innerHTML = paired.map(p => `
+            <div class="user-row">
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
+                    <b>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</b>
+                    <div>
+                        ${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp})">🗑️</button>` : ''}
+                        ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp})">🗑️</button>` : ''}
+                    </div>
+                </div>
+                <small>${p.entry ? 'E: ' + this.formatTimeDisplay(p.entry.time) : '--'} | ${p.exit ? 'S: ' + this.formatTimeDisplay(p.exit.time) : 'En curso'}</small>
+                ${p.exit && p.entry ? `<b style="color:var(--primary)">Horas: ${this.formatDuration(p.duration)}</b>` : ''}
+                <div style="margin-top:5px">
+                    ${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}
+                    ${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}
+                </div>
+            </div>
+        `).join('') || '<p style="margin-top:10px">Sin datos este mes.</p>';
         document.getElementById('admin-employee-detail-card').style.display = 'block';
     },
 
@@ -262,7 +279,23 @@ const app = {
     renderAdminLogs: function() {
         const filtered = this.filterLogsByMonth(this.logs, 'filter-date-admin-logs');
         const paired = this.getPairedLogs(filtered);
-        document.getElementById('admin-logs-list').innerHTML = paired.map(p => `<div class="user-row"><div style="display:flex; justify-content:space-between; align-items:center; width:100%"><strong>👤 ${p.userName}</strong><div>${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp})">🗑️</button>` : ''}${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp})">🗑️</button>` : ''}</div></div><small>E: ${p.entry ? p.entry.time : '--'} | S: ${p.exit ? p.exit.time : '...'}</small>${p.exit && p.entry ? `<b style="color:var(--success)">⏱️ ${this.formatDuration(p.duration)}</b>` : ''}<div style="margin-top:5px">${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}</div></div>`).join('') || '<p>Sin datos este mes.</p>';
+        document.getElementById('admin-logs-list').innerHTML = paired.map(p => `
+            <div class="user-row">
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
+                    <strong>👤 ${p.userName}</strong>
+                    <div>
+                        ${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp})">🗑️</button>` : ''}
+                        ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp})">🗑️</button>` : ''}
+                    </div>
+                </div>
+                <small>E: ${p.entry ? this.formatTimeDisplay(p.entry.time) : '--'} | S: ${p.exit ? this.formatTimeDisplay(p.exit.time) : '...'}</small>
+                ${p.exit && p.entry ? `<b style="color:var(--success)">⏱️ ${this.formatDuration(p.duration)}</b>` : ''}
+                <div style="margin-top:5px">
+                    ${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}
+                    ${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}
+                </div>
+            </div>
+        `).join('') || '<p style="margin-top:10px">Sin datos este mes.</p>';
     },
 
     renderAdminUsers: function() {
@@ -280,7 +313,7 @@ const app = {
             user.name = name; user.pass = pass;
         } else {
             const id = name.toLowerCase().replace(/\s+/g, '');
-            this.users.push({ id, name, role: 'employee', pass });
+            this.users.push({ id, name, role: 'employee', pass: pass });
         }
         this.saveData(); this.resetForm();
     },
@@ -331,12 +364,21 @@ const app = {
     },
 
     generateExcel: function() {
-        const paired = this.getPairedLogs(this.logs);
-        const excelData = paired.map(p => ({ "Empleado": p.userName, "Fecha": p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0], "Entrada": p.entry ? p.entry.time.split(',')[1].trim() : "---", "Salida": p.exit ? p.exit.time.split(',')[1].trim() : "En curso", "Total Horas": p.exit ? this.formatDuration(p.duration) : "---" }));
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Jornadas");
-        XLSX.writeFile(workbook, `Jornadas_Sincronizadas.xlsx`);
+        const filterId = this.currentUser.role === 'admin' ? 'filter-date-admin-logs' : 'filter-date-emp';
+        const filterVal = document.getElementById(filterId).value;
+        const filtered = this.filterLogsByMonth(this.logs, filterId);
+        const paired = this.getPairedLogs(filtered);
+        const excelData = paired.map(p => ({
+            "Empleado": p.userName,
+            "Fecha": p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0],
+            "Entrada": p.entry ? this.formatTimeDisplay(p.entry.time) : "---",
+            "Salida": p.exit ? this.formatTimeDisplay(p.exit.time) : "En curso",
+            "Total Horas": p.exit ? this.formatDuration(p.duration) : "---"
+        }));
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Jornadas");
+        XLSX.writeFile(wb, `Fichajes_${filterVal || 'Historico'}.xlsx`);
     }
 };
 

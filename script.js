@@ -39,7 +39,7 @@ const app = {
             this.refreshCurrentView();
         });
 
-        // Mes actual por defecto al cargar
+        // Configuración inicial de meses en los buscadores
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         setTimeout(() => {
@@ -106,7 +106,6 @@ const app = {
         this.nav('view-login'); 
     },
 
-    // FUNCIÓN PARA QUITAR SEGUNDOS
     formatTimeDisplay: function(timeStr) {
         if (!timeStr) return "--:--";
         const parts = timeStr.split(', ');
@@ -196,7 +195,16 @@ const app = {
         });
     },
 
-    // REFRESCAR VISTA ACTUAL
+    // --- FUNCIONES DE REFRESCO CORREGIDAS ---
+    refreshCurrentDetail: function() {
+        const titleEl = document.getElementById('detail-employee-name');
+        if (!titleEl) return;
+        const title = titleEl.innerText;
+        const empName = title.replace('Jornadas de ', '');
+        const user = this.users.find(u => u.name === empName);
+        if (user) this.viewEmployeeDetail(user.id);
+    },
+
     refreshCurrentView: function() {
         const active = document.querySelector('.view.active');
         if (active) this.nav(active.id);
@@ -206,14 +214,7 @@ const app = {
         }
     },
 
-    // --- FUNCIÓN CORREGIDA: REFRESCAR DETALLE DE EMPLEADO ---
-    refreshCurrentDetail: function() {
-        const title = document.getElementById('detail-employee-name').innerText;
-        const empName = title.replace('Jornadas de ', '');
-        const user = this.users.find(u => u.name === empName);
-        if (user) this.viewEmployeeDetail(user.id);
-    },
-
+    // --- RENDERS ---
     renderEmployeePanel: function() {
         const uLogs = this.logs.filter(l => l.userId === this.currentUser.id);
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-emp');
@@ -271,11 +272,13 @@ const app = {
         const emps = this.users.filter(u => u.role !== 'admin');
         document.getElementById('admin-status-list').innerHTML = emps.map(u => {
             const uLogs = this.logs.filter(l => l.userId === u.id);
-            const isWorking = uLogs.length > 0 && uLogs[uLogs.length-1].type === 'ENTRADA';
+            const lastLog = uLogs[uLogs.length - 1];
+            const isWorking = lastLog && lastLog.type === 'ENTRADA';
             return `<div class="status-item ${isWorking ? 'status-working' : 'status-out'}"><b>${u.name}</b>: ${isWorking ? 'TRABAJANDO' : 'FUERA'}</div>`;
         }).join('') || 'Sin empleados.';
     },
 
+    // --- CORREGIDA: HISTORIAL GLOBAL CON FILTRO ---
     renderAdminLogs: function() {
         const filtered = this.filterLogsByMonth(this.logs, 'filter-date-admin-logs');
         const paired = this.getPairedLogs(filtered);
@@ -288,6 +291,7 @@ const app = {
                         ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp})">🗑️</button>` : ''}
                     </div>
                 </div>
+                <small><b>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</b></small>
                 <small>E: ${p.entry ? this.formatTimeDisplay(p.entry.time) : '--'} | S: ${p.exit ? this.formatTimeDisplay(p.exit.time) : '...'}</small>
                 ${p.exit && p.entry ? `<b style="color:var(--success)">⏱️ ${this.formatDuration(p.duration)}</b>` : ''}
                 <div style="margin-top:5px">

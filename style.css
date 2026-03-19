@@ -215,7 +215,7 @@ button { /* Estilo base de los botones */
     margin: 8px 8px 8px -10px; /* Márgenes ajustados */
     animation: logo 3s ease-in-out; /* Animación de rotación */
     background-color: black; /* Fondo negro */
-    border: 2px solid red; /* Borde rojo */
+    border: 2px solid black; /* Borde rojo */
     vertical-align: middle; /* Centrado vertical */
 }
 

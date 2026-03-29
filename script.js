@@ -24,6 +24,7 @@ try {
 const app = {
     users: [], 
     logs: [], 
+    settings: { entryTime: "08:00", reminderMins: 10 }, // Valores por defecto
     currentUser: null, 
 
     // INICIO
@@ -32,14 +33,17 @@ const app = {
             const data = snapshot.val() || {}; 
             this.users = data.users || [];
             this.logs = data.logs || [];
+            this.settings = data.settings || { entryTime: "08:00", reminderMins: 10 };
+            
             if (this.users.length === 0) {
                 this.users = [{ id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' }];
                 this.saveData(); 
             }
             this.refreshCurrentView();
+            this.updateSettingsUI();
         });
 
-        // Configuración inicial de meses en los buscadores
+        // Configuración inicial de meses
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         setTimeout(() => {
@@ -55,10 +59,58 @@ const app = {
             this.setupUI(this.currentUser);
             this.nav('view-home');
         }
+
+        // BUCLE DE VERIFICACIÓN DE HORARIOS (Cada 1 minuto)
+        setInterval(() => this.checkScheduleReminder(), 60000);
     },
 
     saveData: function() {
-        db.ref('/').set({ users: this.users, logs: this.logs });
+        db.ref('/').update({ users: this.users, logs: this.logs, settings: this.settings });
+    },
+
+    saveSettings: function() {
+        const time = document.getElementById('settings-entry-time').value;
+        const mins = document.getElementById('settings-reminder-mins').value;
+        if(!time || !mins) return alert("Completa los datos de horario");
+        this.settings = { entryTime: time, reminderMins: parseInt(mins) };
+        this.saveData();
+        this.showAlert("Horarios actualizados", "success");
+    },
+
+    updateSettingsUI: function() {
+        const tInput = document.getElementById('settings-entry-time');
+        const mInput = document.getElementById('settings-reminder-mins');
+        if(tInput) tInput.value = this.settings.entryTime;
+        if(mInput) mInput.value = this.settings.reminderMins;
+    },
+
+    // FUNCIÓN CRÍTICA: COMPRUEBA SI DEBE MOSTRAR EL AVISO
+    checkScheduleReminder: function() {
+        if (!this.currentUser || this.currentUser.role === 'admin') return;
+
+        const now = new Date();
+        const currentTotalMins = (now.getHours() * 60) + now.getMinutes();
+
+        const [sHour, sMin] = this.settings.entryTime.split(':').map(Number);
+        const targetTotalMins = (sHour * 60) + sMin;
+        const reminderStartMins = targetTotalMins - this.settings.reminderMins;
+
+        // Si estamos en el rango de tiempo de aviso Y el usuario no ha fichado hoy
+        if (currentTotalMins >= reminderStartMins && currentTotalMins < targetTotalMins) {
+            const todayStr = now.toLocaleDateString();
+            const hasPunchedToday = this.logs.some(l => 
+                l.userId === this.currentUser.id && 
+                l.type === 'ENTRADA' && 
+                new Date(l.timestamp).toLocaleDateString() === todayStr
+            );
+
+            if (!hasPunchedToday) {
+                document.getElementById('alarm-banner').style.display = 'flex';
+                this.playSound(true); // Sonido de alarma más fuerte
+            }
+        } else {
+            document.getElementById('alarm-banner').style.display = 'none';
+        }
     },
 
     toggleMenu: function() {
@@ -77,6 +129,7 @@ const app = {
         if(viewId === 'view-admin-logs') this.renderAdminLogs(); 
         if(viewId === 'view-admin-by-employee') this.renderAdminByEmployee(); 
         if(viewId === 'view-employee') this.renderEmployeePanel(); 
+        if(viewId === 'view-admin-settings') this.updateSettingsUI();
     },
 
     login: function() {
@@ -88,6 +141,8 @@ const app = {
             localStorage.setItem('session', JSON.stringify(this.currentUser));
             this.setupUI(user); 
             this.nav('view-home'); 
+            this.showAlert(`Hola, ${user.name}`, "success");
+            this.checkScheduleReminder(); // Comprobar nada más entrar
         } else alert("Acceso denegado"); 
     },
 
@@ -116,6 +171,46 @@ const app = {
         return `${timeParts[0]}:${timeParts[1]}`; 
     },
 
+    playSound: function(isAlarm = false) {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (isAlarm) {
+                // Sonido tipo alarma bi-tonal
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(660, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.5);
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.5);
+            } else {
+                // Pitido simple de éxito
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.2);
+            }
+        } catch(e) { console.log("Audio bloqueado"); }
+    },
+
+    showAlert: function(message, type) {
+        const container = document.getElementById('notification-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerText = message;
+        container.appendChild(toast);
+        this.playSound(false);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 500);
+        }, 3500);
+    },
+
     punch: function(type) {
         if (!navigator.geolocation) return alert("GPS no disponible");
         const btn = type === 'ENTRADA' ? document.getElementById('btn-in') : document.getElementById('btn-out');
@@ -132,7 +227,9 @@ const app = {
             this.saveData(); 
             btn.disabled = false;
             btn.innerText = originalText;
-            alert("Fichaje guardado correctamente.");
+            document.getElementById('alarm-banner').style.display = 'none';
+            const msg = type === 'ENTRADA' ? `✅ ENTRADA: ${this.formatTimeDisplay(newLog.time)}` : `🛑 SALIDA: ${this.formatTimeDisplay(newLog.time)}`;
+            this.showAlert(msg, type === 'ENTRADA' ? 'success' : 'danger');
         }, (err) => { 
             alert("Error GPS: Activa la ubicación"); 
             btn.disabled = false; btn.innerText = originalText;
@@ -153,14 +250,16 @@ const app = {
                 log.time = newTimeStr;
                 log.timestamp = nD.getTime();
                 this.saveData(); 
+                this.showAlert("Actualizado", "success");
             } catch (e) { alert("Formato incorrecto"); }
         }
     },
 
     deleteLog: function(timestamp) {
-        if (confirm("¿Borrar permanentemente?")) {
+        if (confirm("¿Borrar?")) {
             this.logs = this.logs.filter(l => l.timestamp !== timestamp);
             this.saveData();
+            this.showAlert("Eliminado", "danger");
         }
     },
 
@@ -195,7 +294,6 @@ const app = {
         });
     },
 
-    // --- FUNCIONES DE REFRESCO CORREGIDAS ---
     refreshCurrentDetail: function() {
         const titleEl = document.getElementById('detail-employee-name');
         if (!titleEl) return;
@@ -209,12 +307,9 @@ const app = {
         const active = document.querySelector('.view.active');
         if (active) this.nav(active.id);
         const detailCard = document.getElementById('admin-employee-detail-card');
-        if (detailCard && detailCard.style.display === 'block') {
-            this.refreshCurrentDetail();
-        }
+        if (detailCard && detailCard.style.display === 'block') this.refreshCurrentDetail();
     },
 
-    // --- RENDERS ---
     renderEmployeePanel: function() {
         const uLogs = this.logs.filter(l => l.userId === this.currentUser.id);
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-emp');
@@ -229,17 +324,13 @@ const app = {
                 <b>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</b>
                 <small>${p.entry ? 'E: ' + this.formatTimeDisplay(p.entry.time) : '--'} | ${p.exit ? 'S: ' + this.formatTimeDisplay(p.exit.time) : '...'}</small>
                 ${p.exit && p.entry ? `<b style="color:var(--primary)">Total: ${this.formatDuration(p.duration)}</b>` : ''}
-                <div style="margin-top:5px">
-                    ${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}
-                    ${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}
-                </div>
             </div>
-        `).join('') || '<p style="margin-top:10px">Sin registros este mes.</p>';
+        `).join('') || '<p>Sin registros.</p>';
     },
 
     renderAdminByEmployee: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
-        document.getElementById('admin-select-employee-list').innerHTML = emps.map(u => `<button class="btn-user-select" onclick="app.viewEmployeeDetail('${u.id}')">👤 ${u.name}</button>`).join('') || 'No hay empleados registrados.';
+        document.getElementById('admin-select-employee-list').innerHTML = emps.map(u => `<button class="btn-user-select" onclick="app.viewEmployeeDetail('${u.id}')">👤 ${u.name}</button>`).join('') || 'Sin empleados.';
     },
 
     viewEmployeeDetail: function(userId) {
@@ -250,21 +341,16 @@ const app = {
         document.getElementById('detail-employee-name').innerText = `Jornadas de ${user.name}`;
         document.getElementById('admin-employee-logs-detail').innerHTML = paired.map(p => `
             <div class="user-row">
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
+                <div style="display:flex; justify-content:space-between; width:100%">
                     <b>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</b>
                     <div>
-                        ${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp})">🗑️</button>` : ''}
-                        ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp})">🗑️</button>` : ''}
+                        ${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button>` : ''}
+                        ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button>` : ''}
                     </div>
                 </div>
-                <small>${p.entry ? 'E: ' + this.formatTimeDisplay(p.entry.time) : '--'} | ${p.exit ? 'S: ' + this.formatTimeDisplay(p.exit.time) : 'En curso'}</small>
-                ${p.exit && p.entry ? `<b style="color:var(--primary)">Horas: ${this.formatDuration(p.duration)}</b>` : ''}
-                <div style="margin-top:5px">
-                    ${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}
-                    ${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}
-                </div>
+                <small>E: ${p.entry ? this.formatTimeDisplay(p.entry.time) : '--'} | S: ${p.exit ? this.formatTimeDisplay(p.exit.time) : '...'}</small>
             </div>
-        `).join('') || '<p style="margin-top:10px">Sin datos este mes.</p>';
+        `).join('');
         document.getElementById('admin-employee-detail-card').style.display = 'block';
     },
 
@@ -272,82 +358,50 @@ const app = {
         const emps = this.users.filter(u => u.role !== 'admin');
         document.getElementById('admin-status-list').innerHTML = emps.map(u => {
             const uLogs = this.logs.filter(l => l.userId === u.id);
-            const lastLog = uLogs[uLogs.length - 1];
-            const isWorking = lastLog && lastLog.type === 'ENTRADA';
+            const isWorking = uLogs.length > 0 && uLogs[uLogs.length-1].type === 'ENTRADA';
             return `<div class="status-item ${isWorking ? 'status-working' : 'status-out'}"><b>${u.name}</b>: ${isWorking ? 'TRABAJANDO' : 'FUERA'}</div>`;
-        }).join('') || 'Sin empleados.';
+        }).join('');
     },
 
-    // --- CORREGIDA: HISTORIAL GLOBAL CON FILTRO ---
     renderAdminLogs: function() {
         const filtered = this.filterLogsByMonth(this.logs, 'filter-date-admin-logs');
         const paired = this.getPairedLogs(filtered);
         document.getElementById('admin-logs-list').innerHTML = paired.map(p => `
             <div class="user-row">
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
-                    <strong>👤 ${p.userName}</strong>
-                    <div>
-                        ${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp})">🗑️</button>` : ''}
-                        ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp})">🗑️</button>` : ''}
-                    </div>
-                </div>
-                <small><b>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</b></small>
-                <small>E: ${p.entry ? this.formatTimeDisplay(p.entry.time) : '--'} | S: ${p.exit ? this.formatTimeDisplay(p.exit.time) : '...'}</small>
-                ${p.exit && p.entry ? `<b style="color:var(--success)">⏱️ ${this.formatDuration(p.duration)}</b>` : ''}
-                <div style="margin-top:5px">
-                    ${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}
-                    ${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}
-                </div>
+                <strong>👤 ${p.userName}</strong>
+                <small>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]} | E: ${p.entry ? this.formatTimeDisplay(p.entry.time) : '--'} | S: ${p.exit ? this.formatTimeDisplay(p.exit.time) : '...'}</small>
             </div>
-        `).join('') || '<p style="margin-top:10px">Sin datos este mes.</p>';
+        `).join('');
     },
 
     renderAdminUsers: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
-        document.getElementById('admin-users-list').innerHTML = emps.map(u => `<div class="user-row" style="flex-direction:row; justify-content:space-between; align-items:center;"><div><b>${u.name}</b><br><small>ID: ${u.id}</small></div><div class="user-btns"><button class="btn-small btn-edit" onclick="app.editEmployee('${u.id}')">E</button><button class="btn-small btn-del" onclick="app.deleteEmployee('${u.id}')">X</button></div></div>`).join('') || 'Sin empleados.';
+        document.getElementById('admin-users-list').innerHTML = emps.map(u => `<div class="user-row"><b>${u.name}</b><button class="btn-small btn-del" onclick="app.deleteEmployee('${u.id}')">Eliminar</button></div>`).join('');
     },
 
     saveEmployee: function() {
         const name = document.getElementById('new-emp-name').value.trim();
         const pass = document.getElementById('new-emp-pass').value.trim();
-        const editId = document.getElementById('edit-id').value;
         if(!name || !pass) return alert("Faltan datos");
-        if(editId){
-            const user = this.users.find(u => u.id === editId);
-            user.name = name; user.pass = pass;
-        } else {
-            const id = name.toLowerCase().replace(/\s+/g, '');
-            this.users.push({ id, name, role: 'employee', pass: pass });
-        }
+        const id = name.toLowerCase().replace(/\s+/g, '');
+        this.users.push({ id, name, role: 'employee', pass: pass });
         this.saveData(); this.resetForm();
     },
 
-    editEmployee: function(id) {
-        const user = this.users.find(u => u.id === id);
-        document.getElementById('form-title').innerText = "Editar empleado";
-        document.getElementById('edit-id').value = user.id;
-        document.getElementById('new-emp-name').value = user.name;
-        document.getElementById('new-emp-pass').value = user.pass;
-        document.getElementById('btn-action-cancel').style.display = "block";
-    },
-
-    resetForm: function() {
-        document.getElementById('form-title').innerText = "Crear empleado";
-        document.getElementById('edit-id').value = "";
-        document.getElementById('new-emp-name').value = "";
-        document.getElementById('new-emp-pass').value = "";
-        document.getElementById('btn-action-cancel').style.display = "none";
-    },
-
     deleteEmployee: function(id) {
-        if(confirm("¿Borrar empleado?")){
+        if(confirm("¿Borrar?")){
             this.users = this.users.filter(u => u.id !== id);
             this.saveData(); 
         }
     },
 
+    resetForm: function() {
+        document.getElementById('new-emp-name').value = "";
+        document.getElementById('new-emp-pass').value = "";
+    },
+
     downloadBackup: function() {
-        const data = { users: this.users, logs: this.logs };
+        const data = { users: this.users, logs: this.logs, settings: this.settings };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -359,8 +413,8 @@ const app = {
         const reader = new FileReader();
         reader.onload = (e) => {
             const data = JSON.parse(e.target.result);
-            if (confirm("¿Sobrescribir datos de la NUBE?")) {
-                this.users = data.users; this.logs = data.logs;
+            if (confirm("¿Restaurar?")) {
+                this.users = data.users; this.logs = data.logs; this.settings = data.settings || this.settings;
                 this.saveData(); 
             }
         };
@@ -369,20 +423,19 @@ const app = {
 
     generateExcel: function() {
         const filterId = this.currentUser.role === 'admin' ? 'filter-date-admin-logs' : 'filter-date-emp';
-        const filterVal = document.getElementById(filterId).value;
         const filtered = this.filterLogsByMonth(this.logs, filterId);
         const paired = this.getPairedLogs(filtered);
         const excelData = paired.map(p => ({
             "Empleado": p.userName,
             "Fecha": p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0],
             "Entrada": p.entry ? this.formatTimeDisplay(p.entry.time) : "---",
-            "Salida": p.exit ? this.formatTimeDisplay(p.exit.time) : "En curso",
-            "Total Horas": p.exit ? this.formatDuration(p.duration) : "---"
+            "Salida": p.exit ? this.formatTimeDisplay(p.exit.time) : "---",
+            "Total": p.exit ? this.formatDuration(p.duration) : "---"
         }));
         const ws = XLSX.utils.json_to_sheet(excelData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Jornadas");
-        XLSX.writeFile(wb, `Fichajes_${filterVal || 'Historico'}.xlsx`);
+        XLSX.writeFile(wb, "Fichajes.xlsx");
     }
 };
 

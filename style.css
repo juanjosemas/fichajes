@@ -86,7 +86,7 @@ h3 { /* Estilos para títulos dentro de las cajas */
     z-index: 1; /* Capa base de contenido */
 }
 
-.filter-row { /* Fila para los selectores de mes */
+.filter-row { /* Fila para los selectores de mes (NUEVO AJUSTE COMPACTO) */
     display: flex; /* Diseño en línea */
     justify-content: center; /* Centrado horizontal */
     align-items: center; /* Centrado vertical */
@@ -102,11 +102,11 @@ h3 { /* Estilos para títulos dentro de las cajas */
     font-weight: bold; /* Texto en negrita */
 }
 
-.filter-row input[type="month"] { /* El selector de fecha específico */
+.filter-row input[type="month"] { /* El selector de fecha específico (NUEVO AJUSTE COMPACTO) */
     padding: 4px 8px; /* Relleno muy reducido para que el recuadro sea bajo */
     font-size: 0.9rem; /* Letra más pequeña */
     width: auto; /* Ancho ajustado al contenido del mes */
-    margin: 0; /* Sin márgenes externos */
+    margin: 0; /* Sin márgenes externos que lo estiren */
 }
 
 .logo-icon { /* Icono del reloj en login */
@@ -115,7 +115,7 @@ h3 { /* Estilos para títulos dentro de las cajas */
     display: block; /* Ocupa su propia línea */
 }
 
-input { /* Estilo general de los campos de escritura */
+input { /* Estilo general de los campos de escritura (Mantiene Oppo Fix) */
     width: 100%; /* Ocupa todo el ancho */
     padding: 12px; /* Relleno ligeramente reducido para compactar altura */
     margin: 6px 0; /* Separación vertical */
@@ -127,7 +127,7 @@ input { /* Estilo general de los campos de escritura */
     background: rgba(255, 255, 255, 0.9); /* Casi blanco opaco para visibilidad */
     color: #000; /* Texto negro */
     position: relative; /* Contexto relativo */
-    z-index: 10; /* Por encima de desenfoques */
+    z-index: 10; /* Por encima de desenfoques para permitir clics */
 }
 
 input:focus { /* Al escribir en el campo */
@@ -139,7 +139,7 @@ input:focus { /* Al escribir en el campo */
 
 button { /* Estilo base de los botones */
     width: 100%; /* Ancho completo */
-    padding: 10px; /* Relleno reducido */
+    padding: 10px; /* Relleno reducido para botones más finos */
     border: none; /* Sin bordes */
     border-radius: 8px; /* Redondeado */
     font-weight: bold; /* Negrita */
@@ -150,13 +150,13 @@ button { /* Estilo base de los botones */
     background-color: rgba(26, 115, 232, 0.85); /* Azul translúcido */
     color: white; /* Letra blanca */
     font-family: Piedra; /* Fuente Piedra */
-    font-size: 1.2rem; /* Tamaño letra */
+    font-size: 1.2rem; /* Tamaño ligeramente reducido */
 }
 
-.btn-punch { /* Botones de fichaje */
+.btn-punch { /* Botones de fichaje ahora más pequeños */
     font-size: 1.1rem; /* Letra un poco más pequeña */
     padding: 16px; /* Altura reducida */
-    margin: 8px 0; /* Margen vertical */
+    margin: 8px 0; /* Margen vertical reducido */
 }
 
 .btn-success { /* Botón verde para entradas */
@@ -176,7 +176,7 @@ button { /* Estilo base de los botones */
 
 .badge { /* Etiqueta de estado del empleado */
     display: inline-block; /* Se adapta al texto */
-    padding: 4px 12px; /* Relleno interno */
+    padding: 4px 12px; /* Relleno interno reducido */
     border-radius: 20px; /* Forma de pastilla */
     color: white; /* Texto blanco */
     font-weight: bold; /* Negrita */
@@ -187,10 +187,10 @@ button { /* Estilo base de los botones */
     display: flex; /* Activa flexbox */
     flex-direction: column; /* Apila los datos verticalmente */
     background: rgba(255,255,255,0.25); /* Fondo suave */
-    padding: 8px 10px; /* Relleno reducido */
+    padding: 8px 10px; /* Relleno reducido para que la fila sea más estrecha */
     border-radius: 8px; /* Redondeado */
-    margin-bottom: 6px; /* Separación reducida */
-    text-align: left; /* Alinea a la izquierda */
+    margin-bottom: 6px; /* Separación entre filas reducida */
+    text-align: left; /* Alinea el texto a la izquierda */
     border: 1px solid rgba(255,255,255,0.1); /* Borde sutil */
 }
 
@@ -205,7 +205,7 @@ button { /* Estilo base de los botones */
 
 .btn-small { /* Botones pequeños como borrar/editar */
     width: auto; /* Ancho automático */
-    padding: 4px 8px; /* Relleno mínimo */
+    padding: 4px 8px; /* Relleno mínimo para compactar */
     font-size: 0.7rem; /* Letra mínima */
     margin-left: 4px; /* Separación mínima */
 }
@@ -261,76 +261,3 @@ button { /* Estilo base de los botones */
     border-bottom: 1px solid rgba(255,255,255,0.05); /* Separador sutil */
     font-family: Piedra; /* Fuente decorativa */
 }
-
-.alarm-banner { /* Banner de aviso de fichaje persistente (MODAL ROJO) */
-    position: fixed; /* Se queda fijo en pantalla */
-    top: 0; /* Desde el borde superior */
-    left: 0; /* Desde el borde izquierdo */
-    width: 100%; /* Cubre todo el ancho */
-    height: 100%; /* Cubre todo el alto */
-    background: rgba(211, 47, 47, 0.95); /* Rojo muy opaco para llamar la atención */
-    display: flex; /* Activa flexbox para centrar contenido */
-    justify-content: center; /* Centrado horizontal */
-    align-items: center; /* Centrado vertical */
-    z-index: 9999; /* Por encima de absolutamente todo */
-    color: white; /* Letra blanca */
-    padding: 20px; /* Separación de bordes */
-}
-
-.alarm-content { /* Caja interior blanca de la alarma */
-    background: white; /* Fondo blanco para contraste total */
-    color: #333; /* Texto oscuro para legibilidad */
-    padding: 30px; /* Relleno generoso */
-    border-radius: 20px; /* Muy redondeada */
-    text-align: center; /* Texto centrado */
-    box-shadow: 0 0 50px rgba(0,0,0,0.5); /* Sombra gigante de profundidad */
-    max-width: 300px; /* Límite de ancho para móviles */
-}
-
-.alarm-icon { /* Icono de advertencia gigante */
-    font-size: 4rem; /* Tamaño muy grande */
-    display: block; /* Ocupa su propia línea */
-    margin-bottom: 15px; /* Separación inferior */
-}
-
-.settings-group { /* Agrupador de campos en la configuración de admin */
-    text-align: left; /* Alinea etiquetas a la izquierda */
-    margin-bottom: 15px; /* Separación entre campos */
-    background: rgba(255,255,255,0.2); /* Fondo suave estilo cristal */
-    padding: 10px; /* Relleno */
-    border-radius: 10px; /* Redondeado */
-}
-
-.settings-group label { /* Texto de la etiqueta en configuración */
-    display: block; /* En su propia fila */
-    font-weight: bold; /* Negrita */
-    margin-bottom: 5px; /* Espacio antes del input */
-    font-size: 0.9rem; /* Tamaño de letra ajustado */
-}
-
-#notification-container { /* Contenedor flotante para los avisos rápidos */
-    position: fixed; /* Fijo en pantalla */
-    bottom: 20px; /* Separación de abajo */
-    left: 50%; /* Centro */
-    transform: translateX(-50%); /* Ajuste exacto */
-    z-index: 2000; /* Prioridad alta */
-    width: 90%; /* Casi ancho completo */
-    max-width: 400px; /* Límite */
-    pointer-events: none; /* No estorba si no hay nada */
-}
-
-.toast { /* Estilo individual de aviso tipo Toast */
-    background: rgba(255, 255, 255, 0.95); /* Casi blanco sólido */
-    color: #333; /* Texto oscuro */
-    padding: 15px; /* Relleno */
-    border-radius: 12px; /* Redondeado */
-    margin-top: 10px; /* Espacio entre avisos */
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3); /* Sombra */
-    border-left: 6px solid var(--primary); /* Barra lateral */
-    font-weight: bold; /* Negrita */
-    transition: opacity 0.5s ease; /* Desvanecimiento suave */
-    text-align: center; /* Centrado */
-}
-
-.toast-success { border-left-color: var(--success); } /* Éxito: Barra verde */
-.toast-danger { border-left-color: var(--danger); } /* Error: Barra roja */

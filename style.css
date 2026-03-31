@@ -262,12 +262,13 @@ button { /* Estilo base para todos los botones de la aplicación */
     font-family: Piedra; /* Tipografía Piedra */
 }
 
-/* --- NUEVOS ESTILOS PARA ESTADO EN VIVO --- */
+/* --- NUEVOS ESTILOS PARA ESTADO EN VIVO (ACTUALIZADO: CENTRADO) --- */
 
 .status-item { /* Contenedor para cada fila de empleado en la vista En Vivo */
     display: flex; /* Activa el diseño flexible */
-    justify-content: space-between; /* Separa el nombre (izquierda) de la etiqueta (derecha) */
+    justify-content: center; /* NUEVO: Centra los elementos horizontalmente en el medio de la tarjeta */
     align-items: center; /* Centra ambos elementos verticalmente */
+    gap: 15px; /* NUEVO: Añade un espacio controlado de 15px entre el nombre y la etiqueta */
     padding: 12px; /* Añade un relleno interno cómodo para pulsar */
     background: rgba(255,255,255,0.3); /* Fondo blanco semitransparente para destacar sobre el cristal */
     border-radius: 10px; /* Redondea las esquinas de la fila */

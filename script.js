@@ -32,6 +32,8 @@ const app = {
             const data = snapshot.val() || {}; 
             this.users = data.users || [];
             this.logs = data.logs || [];
+
+            // Solo crea el admin si la lista de usuarios está totalmente vacía
             if (this.users.length === 0) {
                 this.users = [{ id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' }];
                 this.saveData(); 
@@ -80,15 +82,22 @@ const app = {
     },
 
     login: function() {
+        // Obtenemos los valores de los inputs
         const u = document.getElementById('login-user').value.trim().toLowerCase(); 
         const p = document.getElementById('login-pass').value.trim(); 
+        
+        // Buscamos el usuario en la lista que viene de Firebase
         const user = this.users.find(user => user.id === u || user.name.toLowerCase() === u);
+        
         if (user && user.pass === p) { 
             this.currentUser = user; 
+            // Guardamos la sesión para que no pida login al refrescar
             localStorage.setItem('session', JSON.stringify(this.currentUser));
             this.setupUI(user); 
             this.nav('view-home'); 
-        } else alert("Acceso denegado"); 
+        } else {
+            alert("Usuario o contraseña incorrectos. Si acabas de cambiarlos en Firebase, asegúrate de que el ID esté en minúsculas."); 
+        }
     },
 
     setupUI: function(user) {

@@ -7,257 +7,297 @@
 }
 
 body { /* Estilo para el cuerpo del documento */
-    font-family: -apple-system, sans-serif; /* Fuente del sistema móvil */
-    margin: 0; /* Elimina el margen externo */
-    background-color: var(--bg); /* Aplica el color de fondo de reserva */
-    color: var(--dark); /* Establece el color de texto oscuro */
-    overflow-x: hidden; /* Evita el desplazamiento horizontal */
-    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)), url('img/construccion.jpg'); /* Imagen de fondo con capa suave */
-    background-repeat: no-repeat; /* Evita que la imagen se repita */
-    background-position: center center; /* Centra la imagen en la pantalla */
-    background-attachment: fixed; /* La imagen se queda quieta al hacer scroll */
-    background-size: cover; /* La imagen cubre todo el ancho y alto disponible */
+    font-family: -apple-system, sans-serif; /* Establece la fuente predeterminada del sistema operativo móvil */
+    margin: 0; /* Elimina los márgenes externos predeterminados del navegador */
+    background-color: var(--bg); /* Aplica el color de fondo definido en las variables */
+    color: var(--dark); /* Define el color de texto principal como gris oscuro */
+    overflow-x: hidden; /* Oculta cualquier contenido que sobresalga lateralmente */
+    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)), url('img/construccion.jpg'); /* Aplica una capa de color sutil sobre la imagen de fondo */
+    background-repeat: no-repeat; /* Evita que la imagen de fondo se duplique si el contenido es largo */
+    background-position: center center; /* Centra la imagen de fondo tanto horizontal como verticalmente */
+    background-attachment: fixed; /* Mantiene la imagen de fondo fija mientras el contenido se desplaza */
+    background-size: cover; /* Ajusta el tamaño de la imagen para que cubra toda la pantalla sin deformarse */
 }
 
-header { /* Estilo de la barra superior */
-    background: rgba(26, 115, 232, 0.6); /* Fondo azul con transparencia para ver el fondo */
-    backdrop-filter: blur(10px); /* Efecto de desenfoque detrás de la barra */
-    -webkit-backdrop-filter: blur(10px); /* Soporte de desenfoque para iPhone/Safari */
-    color: white; /* Color de texto blanco */
-    height: 55px; /* Altura reducida de la barra de navegación para ganar espacio */
-    display: flex; /* Activa el diseño flexible */
-    justify-content: space-between; /* Separa los elementos a los lados */
+header { /* Estilo de la barra de navegación superior */
+    background: rgba(26, 115, 232, 0.6); /* Establece un fondo azul con 60% de opacidad */
+    backdrop-filter: blur(10px); /* Aplica un efecto de desenfoque al contenido que pase por detrás */
+    -webkit-backdrop-filter: blur(10px); /* Proporciona soporte para el efecto de desenfoque en navegadores Safari/iOS */
+    color: white; /* Define el color del texto y elementos dentro del header como blanco */
+    height: 55px; /* Establece una altura fija de 55 píxeles para la cabecera */
+    display: flex; /* Activa el modelo de caja flexible para alinear elementos */
+    justify-content: space-between; /* Distribuye los elementos internos dejando el máximo espacio entre ellos */
+    align-items: center; /* Centra verticalmente todos los elementos dentro de la cabecera */
+    padding: 0 15px; /* Añade un margen interno de 15 píxeles a los lados izquierdo y derecho */
+    position: sticky; /* Hace que la cabecera se mantenga fija al hacer scroll */
+    top: 0; /* Indica que la posición fija debe ser justo en el borde superior */
+    z-index: 100; /* Asegura que la cabecera siempre esté por encima de otros elementos */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Añade una línea divisoria inferior muy fina y sutil */
+}
+
+#header-title { /* Título principal que aparece en la cabecera */
+    flex-grow: 1; /* Permite que el título ocupe todo el espacio disponible en el centro */
+    text-align: center; /* Centra el texto del título horizontalmente */
+    font-size: 1.6rem; /* Establece un tamaño de fuente de 1.6 rems */
+    margin: 0; /* Elimina cualquier margen automático alrededor del título */
+    font-family: Lobster; /* Aplica la tipografía decorativa llamada Lobster */
+    font-style: italic; /* Aplica el estilo de letra cursiva */
+    text-decoration: underline; /* Añade un subrayado al texto del título */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3); /* Añade una sombra al texto para mejorar su legibilidad */
+}
+
+h2 { /* Estilos para los títulos de nivel 2 */
+    font-family: Piedra; /* Aplica la tipografía de estilo rústico Piedra */
+    font-style: italic; /* Establece el texto en cursiva */
+    text-align: center; /* Alinea el texto en el centro del contenedor */
+    margin: 10px 0; /* Añade 10 píxeles de espacio arriba y abajo */
+    text-shadow: 0 1px 2px rgba(255,255,255,0.8); /* Añade una sombra blanca para resaltar el texto oscuro */
+}
+
+h3 { /* Estilos para los títulos de nivel 3 dentro de las tarjetas */
+    font-family: Lobster; /* Aplica la tipografía decorativa Lobster */
+    font-style: italic; /* Establece el texto en cursiva */
+    text-align: center; /* Alinea el texto en el centro */
+    font-size: 1.3rem; /* Establece el tamaño de la fuente a 1.3 rems */
+    margin: 5px 0 10px 0; /* Margen: 5px arriba, 0 a los lados y 10px abajo */
+    text-shadow: 0 1px 2px rgba(255,255,255,0.8); /* Añade una sombra blanca suave detrás del texto */
+}
+
+.view { /* Contenedor genérico para cada pantalla de la aplicación */
+    display: none; /* Oculta la sección por defecto para que no sea visible */
+    padding: 10px; /* Añade un espacio interno de 10 píxeles */
+    text-align: center; /* Centra todos los elementos que contenga la vista */
+}
+
+.view.active { /* Clase que se añade mediante JavaScript para mostrar una pantalla */
+    display: block; /* Cambia el estado a bloque para que la pantalla se vuelva visible */
+}
+
+.card { /* Estilo para las cajas de contenido con efecto cristal */
+    background: rgba(255, 255, 255, 0.1); /* Define un fondo blanco con 10% de opacidad */
+    backdrop-filter: blur(12px); /* Aplica un desenfoque intenso al fondo detrás de la tarjeta */
+    -webkit-backdrop-filter: blur(12px); /* Soporte para el desenfoque de fondo en dispositivos Apple */
+    padding: 10px; /* Espacio interno de 10 píxeles para que el contenido no toque los bordes */
+    border-radius: 12px; /* Redondea las esquinas de la tarjeta 12 píxeles */
+    margin-bottom: 10px; /* Espacio de 10 píxeles respecto a la siguiente tarjeta */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Crea una sombra proyectada para dar sensación de elevación */
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Dibuja un borde fino semitransparente alrededor de la tarjeta */
+    position: relative; /* Establece un contexto de posicionamiento para elementos hijos */
+    z-index: 1; /* Asegura que la tarjeta esté en un plano superior al fondo */
+}
+
+.filter-row { /* Contenedor para los filtros de fecha y mes */
+    display: flex; /* Utiliza flexbox para alinear la etiqueta y el input en la misma línea */
+    justify-content: center; /* Centra los elementos horizontalmente */
     align-items: center; /* Centra los elementos verticalmente */
-    padding: 0 15px; /* Relleno lateral interno */
-    position: sticky; /* Se queda fijo en la parte superior */
-    top: 0; /* Posición inicial superior */
-    z-index: 100; /* Asegura que esté por encima de las tarjetas */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Borde inferior sutil */
+    gap: 8px; /* Crea un espacio de 8 píxeles entre los elementos internos */
+    margin-bottom: 5px; /* Añade 5 píxeles de espacio debajo del filtro */
+    background: rgba(255,255,255,0.2); /* Aplica un fondo blanco muy suave y transparente */
+    padding: 4px; /* Añade un espacio interno pequeño de 4 píxeles */
+    border-radius: 8px; /* Redondea las esquinas del contenedor de filtro */
 }
 
-#header-title { /* Título principal de la cabecera */
-    flex-grow: 1; /* Ocupa el espacio central */
-    text-align: center; /* Centra el texto */
-    font-size: 1.6rem; /* Tamaño de letra ligeramente reducido */
-    margin: 0; /* Sin márgenes externos */
-    font-family: Lobster; /* Fuente decorativa Lobster */
-    font-style: italic; /* Texto en cursiva */
-    text-decoration: underline; /* Texto subrayado */
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3); /* Sombra para resaltar sobre el fondo */
+.filter-row label { /* Estilo para el texto que acompaña al filtro */
+    font-size: 0.9rem; /* Establece un tamaño de fuente de 0.9 rems */
+    font-weight: bold; /* Pone el texto en negrita */
 }
 
-h2 { /* Estilos para títulos secundarios */
-    font-family: Piedra; /* Fuente Piedra */
-    font-style: italic; /* Cursiva */
-    text-align: center; /* Centrado */
-    margin: 10px 0; /* Margen vertical reducido */
-    text-shadow: 0 1px 2px rgba(255,255,255,0.8); /* Sombra blanca */
+.filter-row input[type="month"] { /* Estilo específico para el selector de mes */
+    padding: 4px 8px; /* Espacio interno: 4px vertical, 8px horizontal */
+    font-size: 0.9rem; /* Define el tamaño del texto dentro del input */
+    width: auto; /* Permite que el ancho se ajuste automáticamente al contenido */
+    margin: 0; /* Elimina cualquier margen externo */
 }
 
-h3 { /* Estilos para títulos dentro de las cajas */
-    font-family: Lobster; /* Fuente Lobster */
-    font-style: italic; /* Cursiva */
-    text-align: center; /* Centrado */
-    font-size: 1.3rem; /* Tamaño de letra reducido para compactar la caja */
-    margin: 5px 0 10px 0; /* Margen ajustado: 5px arriba, 10px abajo */
-    text-shadow: 0 1px 2px rgba(255,255,255,0.8); /* Sombra blanca */
+.logo-icon { /* Estilo para el icono decorativo (el reloj) en el login */
+    font-size: 3.5rem; /* Tamaño grande para el emoji o icono */
+    margin-bottom: 5px; /* Espacio de 5 píxeles por debajo del icono */
+    display: block; /* Asegura que se comporte como un bloque independiente */
 }
 
-.view { /* Contenedor de cada pantalla de la app */
-    display: none; /* Oculta la pantalla por defecto */
-    padding: 10px; /* Margen interno reducido para que las cajas lleguen más al borde */
-    text-align: center; /* Centra el contenido interior */
+input { /* Estilo general para todos los campos de entrada de texto */
+    width: 100%; /* El campo ocupa todo el ancho disponible del contenedor */
+    padding: 12px; /* Añade espacio interno para que el texto no esté pegado al borde */
+    margin: 6px 0; /* Añade 6 píxeles de separación arriba y abajo */
+    border: 2px solid rgba(0,0,0,0.1); /* Crea un borde sutil casi transparente */
+    border-radius: 8px; /* Redondea las esquinas del campo */
+    box-sizing: border-box; /* Incluye el padding y el borde dentro del cálculo del ancho total */
+    font-size: 1.1rem; /* Establece un tamaño de letra cómodo para leer */
+    font-family: Sriracha; /* Aplica la tipografía manuscrita Sriracha */
+    background: rgba(255, 255, 255, 0.9); /* Fondo blanco casi opaco para garantizar legibilidad */
+    color: #000; /* Define el color del texto escrito como negro puro */
+    position: relative; /* Permite el posicionamiento relativo para capas */
+    z-index: 10; /* Asegura que el input esté por encima de otros efectos visuales */
 }
 
-.view.active { /* Clase que se aplica a la pantalla visible */
-    display: block; /* Muestra la pantalla cuando está activa */
+input:focus { /* Estilo aplicado cuando el usuario hace clic o selecciona el campo */
+    background: #ffffff; /* El fondo se vuelve blanco sólido */
+    outline: none; /* Elimina el borde de enfoque predeterminado del sistema */
+    border-color: var(--primary); /* El borde cambia al color azul principal */
+    box-shadow: 0 0 8px rgba(26, 115, 232, 0.3); /* Añade un resplandor azul alrededor del campo */
 }
 
-.card { /* Tarjeta de contenido estilo cristal compacta */
-    background: rgba(255, 255, 255, 0.1); /* Transparencia de 0.1 mantenida */
-    backdrop-filter: blur(12px); /* Desenfoque de fondo */
-    -webkit-backdrop-filter: blur(12px); /* Soporte Safari */
-    padding: 10px; /* Relleno interno reducido para compactar */
-    border-radius: 12px; /* Redondeado de las esquinas */
-    margin-bottom: 10px; /* Separación reducida entre tarjetas */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* Sombra de profundidad */
-    border: 1px solid rgba(255, 255, 255, 0.3); /* Borde blanco muy fino */
-    position: relative; /* Contexto de capas */
-    z-index: 1; /* Capa base de contenido */
+button { /* Estilo base para todos los botones de la aplicación */
+    width: 100%; /* El botón ocupa todo el ancho de su contenedor */
+    padding: 10px; /* Añade 10 píxeles de espacio interno */
+    border: none; /* Elimina el borde predeterminado */
+    border-radius: 8px; /* Redondea las esquinas del botón */
+    font-weight: bold; /* Pone el texto del botón en negrita */
+    cursor: pointer; /* Cambia el cursor a una mano al pasar por encima */
 }
 
-.filter-row { /* Fila para los selectores de mes (NUEVO AJUSTE COMPACTO) */
-    display: flex; /* Diseño en línea */
-    justify-content: center; /* Centrado horizontal */
-    align-items: center; /* Centrado vertical */
-    gap: 8px; /* Espacio entre el texto y el cuadro */
-    margin-bottom: 5px; /* Margen inferior mínimo para ganar espacio */
-    background: rgba(255,255,255,0.2); /* Fondo suave */
-    padding: 4px; /* Relleno mínimo para que no sea tan alto */
-    border-radius: 8px; /* Redondeado */
+.btn-main { /* Estilo para el botón principal de acción (como Entrar) */
+    background-color: rgba(26, 115, 232, 0.85); /* Fondo azul con 85% de opacidad */
+    color: white; /* Color del texto en blanco */
+    font-family: Piedra; /* Tipografía Piedra */
+    font-size: 1.2rem; /* Tamaño de fuente de 1.2 rems */
 }
 
-.filter-row label { /* Texto de la etiqueta 'Mes:' */
-    font-size: 0.9rem; /* Letra un poco más pequeña */
+.btn-punch { /* Estilo para los botones de fichar entrada y salida */
+    font-size: 1.1rem; /* Tamaño de fuente de 1.1 rems */
+    padding: 16px; /* Aumenta el relleno para que el botón sea más fácil de pulsar en móvil */
+    margin: 8px 0; /* Margen de 8 píxeles arriba y abajo */
+}
+
+.btn-success { /* Botón de color verde para acciones positivas */
+    background-color: var(--success); /* Aplica el color verde de la variable success */
+    color: white; /* Texto en blanco */
+}
+
+.btn-danger { /* Botón de color rojo para acciones de detención o borrado */
+    background-color: var(--danger); /* Aplica el color rojo de la variable danger */
+    color: white; /* Texto en blanco */
+}
+
+.btn-secondary { /* Botón de color gris para acciones secundarias o cancelar */
+    background-color: #6c757d; /* Establece un color gris estándar */
+    color: white; /* Texto en blanco */
+}
+
+.badge { /* Estilo para las etiquetas de estado (Trabajando/Fuera) */
+    display: inline-block; /* Hace que el contenedor se ajuste al ancho del texto */
+    padding: 4px 12px; /* Margen interno: 4px vertical, 12px horizontal */
+    border-radius: 20px; /* Crea esquinas totalmente redondeadas (forma de pastilla) */
+    color: white; /* Texto en blanco */
     font-weight: bold; /* Texto en negrita */
+    font-size: 0.8rem; /* Tamaño de fuente pequeño */
 }
 
-.filter-row input[type="month"] { /* El selector de fecha específico (NUEVO AJUSTE COMPACTO) */
-    padding: 4px 8px; /* Relleno muy reducido para que el recuadro sea bajo */
-    font-size: 0.9rem; /* Letra más pequeña */
-    width: auto; /* Ancho ajustado al contenido del mes */
-    margin: 0; /* Sin márgenes externos que lo estiren */
-}
-
-.logo-icon { /* Icono del reloj en login */
-    font-size: 3.5rem; /* Tamaño un poco más pequeño que antes */
-    margin-bottom: 5px; /* Separación inferior mínima */
-    display: block; /* Ocupa su propia línea */
-}
-
-input { /* Estilo general de los campos de escritura (Mantiene Oppo Fix) */
-    width: 100%; /* Ocupa todo el ancho */
-    padding: 12px; /* Relleno ligeramente reducido para compactar altura */
-    margin: 6px 0; /* Separación vertical */
-    border: 2px solid rgba(0,0,0,0.1); /* Borde sutil */
-    border-radius: 8px; /* Redondeado */
-    box-sizing: border-box; /* Incluye el padding en el ancho */
-    font-size: 1.1rem; /* Letra grande */
-    font-family: Sriracha; /* Fuente manuscrita */
-    background: rgba(255, 255, 255, 0.9); /* Casi blanco opaco para visibilidad */
-    color: #000; /* Texto negro */
-    position: relative; /* Contexto relativo */
-    z-index: 10; /* Por encima de desenfoques para permitir clics */
-}
-
-input:focus { /* Al escribir en el campo */
-    background: #ffffff; /* Blanco sólido */
-    outline: none; /* Quita borde de sistema */
-    border-color: var(--primary); /* Borde azul */
-    box-shadow: 0 0 8px rgba(26, 115, 232, 0.3); /* Resplandor sutil */
-}
-
-button { /* Estilo base de los botones */
-    width: 100%; /* Ancho completo */
-    padding: 10px; /* Relleno reducido para botones más finos */
-    border: none; /* Sin bordes */
-    border-radius: 8px; /* Redondeado */
-    font-weight: bold; /* Negrita */
-    cursor: pointer; /* Mano al pasar */
-}
-
-.btn-main { /* Botón azul principal */
-    background-color: rgba(26, 115, 232, 0.85); /* Azul translúcido */
-    color: white; /* Letra blanca */
-    font-family: Piedra; /* Fuente Piedra */
-    font-size: 1.2rem; /* Tamaño ligeramente reducido */
-}
-
-.btn-punch { /* Botones de fichaje ahora más pequeños */
-    font-size: 1.1rem; /* Letra un poco más pequeña */
-    padding: 16px; /* Altura reducida */
-    margin: 8px 0; /* Margen vertical reducido */
-}
-
-.btn-success { /* Botón verde para entradas */
-    background-color: var(--success); /* Color éxito */
-    color: white; /* Texto blanco */
-}
-
-.btn-danger { /* Botón rojo para salidas */
-    background-color: var(--danger); /* Color peligro */
-    color: white; /* Texto blanco */
-}
-
-.btn-secondary { /* Botón gris neutro */
-    background-color: #6c757d; /* Color gris */
-    color: white; /* Texto blanco */
-}
-
-.badge { /* Etiqueta de estado del empleado */
-    display: inline-block; /* Se adapta al texto */
-    padding: 4px 12px; /* Relleno interno reducido */
-    border-radius: 20px; /* Forma de pastilla */
-    color: white; /* Texto blanco */
-    font-weight: bold; /* Negrita */
-    font-size: 0.8rem; /* Letra pequeña */
-}
-
-.user-row { /* Filas de las listas de registros */
-    display: flex; /* Activa flexbox */
-    flex-direction: column; /* Apila los datos verticalmente */
-    background: rgba(255,255,255,0.25); /* Fondo suave */
-    padding: 8px 10px; /* Relleno reducido para que la fila sea más estrecha */
-    border-radius: 8px; /* Redondeado */
-    margin-bottom: 6px; /* Separación entre filas reducida */
+.user-row { /* Estilo para cada fila de registros o empleados en las listas */
+    display: flex; /* Activa flexbox para organizar el contenido */
+    flex-direction: column; /* Organiza los elementos internos uno debajo del otro */
+    background: rgba(255,255,255,0.25); /* Fondo blanco semitransparente */
+    padding: 8px 10px; /* Relleno interno de la fila */
+    border-radius: 8px; /* Esquinas redondeadas */
+    margin-bottom: 6px; /* Espacio entre filas sucesivas */
     text-align: left; /* Alinea el texto a la izquierda */
-    border: 1px solid rgba(255,255,255,0.1); /* Borde sutil */
+    border: 1px solid rgba(255,255,255,0.1); /* Añade un borde blanco casi invisible */
 }
 
-.btn-user-select { /* Botones para elegir empleado */
-    background: rgba(255, 255, 255, 0.4); /* Blanco suave */
-    color: var(--dark); /* Texto oscuro */
-    margin-bottom: 6px; /* Separación reducida */
-    text-align: left; /* Alineado izquierda */
-    padding: 10px; /* Relleno reducido */
-    font-family: Sriracha; /* Fuente manuscrita */
+.btn-user-select { /* Estilo para los botones de selección de empleado en el panel admin */
+    background: rgba(255, 255, 255, 0.4); /* Fondo blanco con 40% de opacidad */
+    color: var(--dark); /* Texto en color gris oscuro */
+    margin-bottom: 6px; /* Espacio debajo del botón */
+    text-align: left; /* Alinea el nombre del empleado a la izquierda */
+    padding: 10px; /* Relleno interno */
+    font-family: Sriracha; /* Tipografía manuscrita Sriracha */
 }
 
-.btn-small { /* Botones pequeños como borrar/editar */
-    width: auto; /* Ancho automático */
-    padding: 4px 8px; /* Relleno mínimo para compactar */
-    font-size: 0.7rem; /* Letra mínima */
-    margin-left: 4px; /* Separación mínima */
+.btn-small { /* Botones de tamaño reducido para iconos como editar o borrar */
+    width: auto; /* El ancho depende del contenido (el icono) */
+    padding: 4px 8px; /* Relleno interno pequeño */
+    font-size: 0.7rem; /* Tamaño de fuente muy pequeño */
+    margin-left: 4px; /* Espacio a la izquierda para separar botones entre sí */
 }
 
-.ico { /* Imagen del logo circular */
-    border-radius: 50%; /* Forma circular */
-    margin: 8px 8px 8px -10px; /* Márgenes ajustados */
-    animation: logo 3s ease-in-out; /* Animación de rotación */
-    background-color: black; /* Fondo negro */
-    border: 2px solid black; /* Borde rojo */
-    vertical-align: middle; /* Centrado vertical */
+.ico { /* Estilo para la imagen del logo circular */
+    border-radius: 50%; /* Hace que la imagen sea perfectamente redonda */
+    margin: 8px 8px 8px -10px; /* Ajusta los márgenes para su posición en la cabecera */
+    animation: logo 3s ease-in-out; /* Aplica la animación 'logo' de 3 segundos */
+    background-color: black; /* Fondo negro por si la imagen tiene transparencias */
+    border: 2px solid black; /* Crea un borde sólido negro */
+    vertical-align: middle; /* Alinea la imagen verticalmente con el texto */
 }
 
-@keyframes logo { /* Definición animación rotación */
-    from { opacity: 0; transform: scale(0.5) rotate(0deg); }
-    to { opacity: 1; transform: scale(1) rotate(1440deg); }
+@keyframes logo { /* Definición de la animación de rotación del logo */
+    from { opacity: 0; transform: scale(0.5) rotate(0deg); } /* Estado inicial: invisible, pequeño y sin rotar */
+    to { opacity: 1; transform: scale(1) rotate(1440deg); } /* Estado final: visible, tamaño real y varias vueltas */
 }
 
-.sidebar { /* Menú lateral oculto */
-    position: fixed; /* Fijo */
-    left: -280px; /* Escondido a la izquierda */
-    top: 0; /* Arriba */
-    width: 280px; /* Ancho */
-    height: 100%; /* Todo el alto */
-    background: var(--dark); /* Gris oscuro */
-    color: white; /* Letra blanca */
-    transition: 0.3s ease; /* Movimiento suave */
-    z-index: 1001; /* Sobre todo el contenido */
-    visibility: hidden; /* Evita clics invisibles */
+.sidebar { /* Estilo para el menú lateral oculto */
+    position: fixed; /* Mantiene el menú en una posición fija en la pantalla */
+    left: -280px; /* Lo desplaza fuera de la pantalla por la izquierda */
+    top: 0; /* Alineado al borde superior */
+    width: 280px; /* Ancho fijo de 280 píxeles */
+    height: 100%; /* Ocupa todo el alto de la ventana */
+    background: var(--dark); /* Color de fondo gris oscuro */
+    color: white; /* Texto en color blanco */
+    transition: 0.3s ease; /* Define una transición suave de 0.3 segundos para abrir/cerrar */
+    z-index: 1001; /* Asegura que esté por encima del overlay y del header */
+    visibility: hidden; /* Lo mantiene oculto para los lectores de pantalla cuando está cerrado */
 }
 
-.sidebar.active { /* Sidebar visible */
-    left: 0; /* Posición 0 */
-    visibility: visible; /* Se hace presente */
+.sidebar.active { /* Clase que se aplica para mostrar el menú lateral */
+    left: 0; /* Mueve el menú a la posición 0 (visible) */
+    visibility: visible; /* Hace que el menú sea visible */
 }
 
-#overlay { /* Sombra negra al abrir menú */
+#overlay { /* Capa oscura que bloquea el resto de la app cuando el menú está abierto */
     display: none; /* Oculto por defecto */
-    position: fixed; /* Fijo */
-    top: 0; /* Arriba */
-    left: 0; /* Izquierda */
-    width: 100%; /* Todo el ancho */
-    height: 100%; /* Todo el alto */
-    background: rgba(0,0,0,0.5); /* Color negro transparente */
-    z-index: 1000; /* Bajo el sidebar */
+    position: fixed; /* Fijo sobre toda la pantalla */
+    top: 0; /* Desde arriba */
+    left: 0; /* Desde la izquierda */
+    width: 100%; /* Cubre todo el ancho */
+    height: 100%; /* Cubre todo el alto */
+    background: rgba(0,0,0,0.5); /* Color negro con 50% de transparencia */
+    z-index: 1000; /* Justo debajo del sidebar pero encima de la app */
 }
 
-.sidebar-nav a { /* Enlaces del menú lateral */
-    color: #e8eaed; /* Gris claro */
-    padding: 12px 20px; /* Área de toque ajustada */
-    text-decoration: none; /* Quita subrayado */
-    display: block; /* Ocupa toda la fila */
-    border-bottom: 1px solid rgba(255,255,255,0.05); /* Separador sutil */
-    font-family: Piedra; /* Fuente decorativa */
+.sidebar-nav a { /* Estilo para los enlaces de navegación del menú lateral */
+    color: #e8eaed; /* Color gris muy claro casi blanco */
+    padding: 12px 20px; /* Área de clic amplia: 12px vertical, 20px horizontal */
+    text-decoration: none; /* Elimina el subrayado de los enlaces */
+    display: block; /* Hace que el enlace ocupe todo el ancho de la fila */
+    border-bottom: 1px solid rgba(255,255,255,0.05); /* Añade una línea separadora muy tenue */
+    font-family: Piedra; /* Tipografía Piedra */
+}
+
+/* --- NUEVOS ESTILOS PARA ESTADO EN VIVO --- */
+
+.status-item { /* Contenedor para cada fila de empleado en la vista En Vivo */
+    display: flex; /* Activa el diseño flexible */
+    justify-content: space-between; /* Separa el nombre (izquierda) de la etiqueta (derecha) */
+    align-items: center; /* Centra ambos elementos verticalmente */
+    padding: 12px; /* Añade un relleno interno cómodo para pulsar */
+    background: rgba(255,255,255,0.3); /* Fondo blanco semitransparente para destacar sobre el cristal */
+    border-radius: 10px; /* Redondea las esquinas de la fila */
+    margin-bottom: 8px; /* Separa una fila de otra */
+    border: 1px solid rgba(255,255,255,0.2); /* Borde fino decorativo */
+}
+
+.status-name { /* Estilo para el nombre del empleado en la lista */
+    font-weight: bold; /* Pone el nombre en negrita */
+    font-family: Sriracha; /* Usa la tipografía manuscrita */
+    font-size: 1.1rem; /* Establece un tamaño de letra legible */
+}
+
+.status-badge-live { /* Clase base para la etiqueta de estado de color */
+    padding: 5px 15px; /* Relleno interno de la etiqueta */
+    border-radius: 15px; /* Crea el efecto de cápsula redondeada */
+    color: white; /* Texto siempre en blanco para contraste */
+    font-size: 0.85rem; /* Tamaño de letra reducido */
+    font-weight: 800; /* Texto extra negrita */
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4); /* Sombra al texto para que resalte más */
+    min-width: 90px; /* Asegura que todas las etiquetas tengan el mismo ancho mínimo */
+    text-align: center; /* Centra la palabra (Fuera/Trabajando) en la etiqueta */
+}
+
+.status-badge-working { /* Clase específica para cuando el empleado está trabajando */
+    background-color: var(--success); /* Aplica el color verde de la variable success */
+    box-shadow: 0 0 10px rgba(0, 200, 83, 0.4); /* Añade un resplandor verde suave */
+}
+
+.status-badge-out { /* Clase específica para cuando el empleado está fuera */
+    background-color: var(--danger); /* Aplica el color rojo de la variable danger */
+    box-shadow: 0 0 10px rgba(211, 47, 47, 0.4); /* Añade un resplandor rojo suave */
 }

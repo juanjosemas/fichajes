@@ -272,7 +272,14 @@ const app = {
         document.getElementById('admin-status-list').innerHTML = emps.map(u => {
             const uLogs = this.logs.filter(l => l.userId === u.id);
             const isWorking = uLogs.length > 0 && uLogs[uLogs.length-1].type === 'ENTRADA';
-            return `<div class="status-item ${isWorking ? 'status-working' : 'status-out'}"><b>${u.name}</b>: ${isWorking ? 'TRABAJANDO' : 'FUERA'}</div>`;
+            // Creamos variables para simplificar el HTML
+            const statusClass = isWorking ? 'status-badge-working' : 'status-badge-out';
+            const statusText = isWorking ? 'TRABAJANDO' : 'FUERA';
+            return `
+                <div class="status-item">
+                    <span class="status-name">👤 ${u.name}</span>
+                    <span class="status-badge-live ${statusClass}">${statusText}</span>
+                </div>`;
         }).join('') || 'Sin empleados.';
     },
 

@@ -508,7 +508,7 @@ const app = {
             ["INFORME DE JORNADAS"],
             [""],
             ["Empresa:", "Ecostruct S.L.", "", "Empleado:", user.name],
-            ["CIF:", "B-12345678", "", "Nº Afiliación:", ""],
+            ["CIF:", "B-19343441", "", "Nº Afiliación:", ""],
             ["Centro de trabajo:", "Oficina Principal", "", "Intervalo:", filterVal],
             [""],
             ["FECHA:", "ENTRADA:", "SALIDA:", "DURACIÓN:"], 

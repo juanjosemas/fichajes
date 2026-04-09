@@ -415,11 +415,11 @@ const app = {
         const rows = [
             ["INFORME DE JORNADAS"],
             [""],
-            ["Empresa", "Ecostruct S.L.", "", "Empleado", user.name],
-            ["CIF", "B-12345678", "", "Nº Afiliación", ""],
-            ["Centro de trabajo", "Oficina Principal", "", "Intervalo", filterVal],
+            ["Empresa:", "Ecostruct S.L.", "", "Empleado:", user.name],
+            ["CIF:", "B-12345678", "", "Nº Afiliación:", ""],
+            ["Centro de trabajo:", "Oficina Principal", "", "Intervalo:", filterVal],
             [""],
-            ["FECHA", "ENTRADA", "SALIDA", "DURACIÓN"], // Encabezados de tabla
+            ["FECHA:", "ENTRADA:", "SALIDA:", "DURACIÓN:"], // Encabezados de tabla
         ];
 
         paired.forEach(p => {
@@ -432,10 +432,10 @@ const app = {
         });
 
         rows.push([""]);
-        rows.push(["TOTAL TIEMPO TRABAJADO", this.formatDuration(totalMs)]);
+        rows.push(["TOTAL TIEMPO TRABAJADO:", this.formatDuration(totalMs)]);
         rows.push([""]);
-        rows.push(["RESUMEN"]);
-        rows.push(["TIEMPO TOTAL", this.formatDuration(totalMs)]);
+        rows.push(["RESUMEN:"]);
+        rows.push(["TIEMPO TOTAL:", this.formatDuration(totalMs)]);
         rows.push([""]);
         rows.push([""]);
         rows.push(["Firma empleado:", "", "", "Firma y sello empresa:"]);

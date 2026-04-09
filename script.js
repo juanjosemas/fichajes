@@ -175,7 +175,7 @@ const app = {
     },
 
     formatDuration: function(ms) {
-        if (ms <= 0) return "0m";
+        if (ms <= 0) return "0h 0m";
         const min = Math.floor(ms / 60000);
         return `${Math.floor(min / 60)}h ${min % 60}m`;
     },
@@ -256,6 +256,8 @@ const app = {
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-admin-detail');
         const paired = this.getPairedLogs(filtered);
         document.getElementById('detail-employee-name').innerText = `Jornadas de ${user.name}`;
+        // Guardamos el ID actual en un atributo para el botón de excel
+        document.getElementById('admin-employee-detail-card').dataset.currentUserDetail = userId;
         document.getElementById('admin-employee-logs-detail').innerHTML = paired.map(p => `
             <div class="user-row">
                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
@@ -394,6 +396,55 @@ const app = {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Jornadas");
         XLSX.writeFile(wb, `Fichajes_${filterVal || 'Historico'}.xlsx`);
+    },
+
+    // --- NUEVA FUNCIÓN: INFORME INDIVIDUAL CON FORMATO DE FOTO ---
+    generateIndividualExcel: function(userId, inputFilterId) {
+        // Si no viene userId (desde admin), lo sacamos del dataset del card
+        const id = userId || document.getElementById('admin-employee-detail-card').dataset.currentUserDetail;
+        const user = this.users.find(u => u.id === id);
+        const filterVal = document.getElementById(inputFilterId).value;
+        
+        const uLogs = this.logs.filter(l => l.userId === id);
+        const filtered = this.filterLogsByMonth(uLogs, inputFilterId);
+        const paired = this.getPairedLogs(filtered).reverse(); // Orden cronológico para el informe
+
+        let totalMs = 0;
+
+        // Construimos el cuerpo de la tabla
+        const rows = [
+            ["INFORME DE JORNADAS"],
+            [""],
+            ["Empresa", "Ecostruct S.L.", "", "Empleado", user.name],
+            ["CIF", "B-12345678", "", "Nº Afiliación", ""],
+            ["Centro de trabajo", "Oficina Principal", "", "Intervalo", filterVal],
+            [""],
+            ["FECHA", "ENTRADA", "SALIDA", "DURACIÓN"], // Encabezados de tabla
+        ];
+
+        paired.forEach(p => {
+            const fecha = p.entry ? p.entry.time.split(',')[0] : (p.exit ? p.exit.time.split(',')[0] : '--');
+            const entrada = p.entry ? this.formatTimeDisplay(p.entry.time) : '--';
+            const salida = p.exit ? this.formatTimeDisplay(p.exit.time) : 'En curso';
+            const duracion = p.exit && p.entry ? this.formatDuration(p.duration) : '--';
+            if(p.duration) totalMs += p.duration;
+            rows.push([fecha, entrada, salida, duracion]);
+        });
+
+        rows.push([""]);
+        rows.push(["TOTAL TIEMPO TRABAJADO", this.formatDuration(totalMs)]);
+        rows.push([""]);
+        rows.push(["RESUMEN"]);
+        rows.push(["TIEMPO TOTAL", this.formatDuration(totalMs)]);
+        rows.push([""]);
+        rows.push([""]);
+        rows.push(["Firma empleado:", "", "", "Firma y sello empresa:"]);
+        rows.push(["__________________________", "", "", "__________________________"]);
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Informe");
+        XLSX.writeFile(wb, `Informe_${user.name}_${filterVal}.xlsx`);
     }
 };
 

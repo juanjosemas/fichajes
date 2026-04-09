@@ -398,20 +398,112 @@ const app = {
         XLSX.writeFile(wb, `Fichajes_${filterVal || 'Historico'}.xlsx`);
     },
 
-    // --- NUEVA FUNCIÓN: INFORME INDIVIDUAL CON FORMATO DE FOTO ---
-    generateIndividualExcel: function(userId, inputFilterId) {
-        // Si no viene userId (desde admin), lo sacamos del dataset del card
+    generatePDF: function() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const filterId = this.currentUser.role === 'admin' ? 'filter-date-admin-logs' : 'filter-date-emp';
+        const filterVal = document.getElementById(filterId).value;
+        const filtered = this.filterLogsByMonth(this.logs, filterId);
+        const paired = this.getPairedLogs(filtered);
+
+        doc.setFontSize(18);
+        doc.text("Historial Global de Fichajes", 14, 20);
+        doc.setFontSize(10);
+        doc.text(`Mes: ${filterVal || 'Todo el histórico'}`, 14, 28);
+
+        const head = [["Empleado", "Fecha", "Entrada", "Salida", "Total"]];
+        const body = paired.map(p => [
+            p.userName,
+            p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0],
+            p.entry ? this.formatTimeDisplay(p.entry.time) : "---",
+            p.exit ? this.formatTimeDisplay(p.exit.time) : "En curso",
+            p.exit ? this.formatDuration(p.duration) : "---"
+        ]);
+
+        doc.autoTable({ head, body, startY: 35 });
+        doc.save(`Fichajes_${filterVal || 'Historico'}.pdf`);
+    },
+
+    // --- NUEVA FUNCIÓN: INFORME INDIVIDUAL CON FORMATO DE FOTO (PDF) ---
+    generateIndividualPDF: function(userId, inputFilterId) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
         const id = userId || document.getElementById('admin-employee-detail-card').dataset.currentUserDetail;
         const user = this.users.find(u => u.id === id);
         const filterVal = document.getElementById(inputFilterId).value;
         
         const uLogs = this.logs.filter(l => l.userId === id);
         const filtered = this.filterLogsByMonth(uLogs, inputFilterId);
-        const paired = this.getPairedLogs(filtered).reverse(); // Orden cronológico para el informe
+        const paired = this.getPairedLogs(filtered).reverse(); 
 
         let totalMs = 0;
 
-        // Construimos el cuerpo de la tabla
+        // Cabecera del informe
+        doc.setFontSize(16);
+        doc.setTextColor(230, 126, 34); // Naranja corporativo
+        doc.text("INFORME DE JORNADAS", 105, 15, { align: "center" });
+
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Empresa: Ecostruct S.L.`, 14, 25);
+        doc.text(`CIF: B-12345678`, 14, 30);
+        doc.text(`Centro: Oficina Principal`, 14, 35);
+
+        doc.text(`Empleado: ${user.name}`, 120, 25);
+        doc.text(`Nº Afiliación: ---`, 120, 30);
+        doc.text(`Mes: ${filterVal}`, 120, 35);
+
+        // Tabla de datos
+        const head = [["FECHA", "ENTRADA", "SALIDA", "DURACIÓN"]];
+        const body = paired.map(p => {
+            const fecha = p.entry ? p.entry.time.split(',')[0] : (p.exit ? p.exit.time.split(',')[0] : '--');
+            const entrada = p.entry ? this.formatTimeDisplay(p.entry.time) : '--';
+            const salida = p.exit ? this.formatTimeDisplay(p.exit.time) : 'En curso';
+            const duracion = p.exit && p.entry ? this.formatDuration(p.duration) : '--';
+            if(p.duration) totalMs += p.duration;
+            return [fecha, entrada, salida, duracion];
+        });
+
+        doc.autoTable({
+            head,
+            body,
+            startY: 45,
+            theme: 'grid',
+            headStyles: { fillColor: [44, 62, 80] }
+        });
+
+        let finalY = doc.lastAutoTable.finalY + 10;
+
+        // Resumen
+        doc.setFont(undefined, 'bold');
+        doc.text("RESUMEN:", 14, finalY);
+        doc.setFont(undefined, 'normal');
+        doc.text(`TOTAL TIEMPO TRABAJADO: ${this.formatDuration(totalMs)}`, 14, finalY + 7);
+        doc.text(`TIEMPO TOTAL: ${this.formatDuration(totalMs)}`, 14, finalY + 14);
+
+        // Firmas
+        finalY += 40;
+        doc.text("Firma empleado:", 14, finalY);
+        doc.text("__________________________", 14, finalY + 10);
+        
+        doc.text("Firma y sello empresa:", 120, finalY);
+        doc.text("__________________________", 120, finalY + 10);
+
+        doc.save(`Informe_${user.name}_${filterVal}.pdf`);
+    },
+
+    // --- FUNCIÓN: INFORME INDIVIDUAL CON FORMATO DE FOTO (EXCEL) ---
+    generateIndividualExcel: function(userId, inputFilterId) {
+        const id = userId || document.getElementById('admin-employee-detail-card').dataset.currentUserDetail;
+        const user = this.users.find(u => u.id === id);
+        const filterVal = document.getElementById(inputFilterId).value;
+        
+        const uLogs = this.logs.filter(l => l.userId === id);
+        const filtered = this.filterLogsByMonth(uLogs, inputFilterId);
+        const paired = this.getPairedLogs(filtered).reverse(); 
+
+        let totalMs = 0;
+
         const rows = [
             ["INFORME DE JORNADAS"],
             [""],
@@ -419,7 +511,7 @@ const app = {
             ["CIF:", "B-12345678", "", "Nº Afiliación:", ""],
             ["Centro de trabajo:", "Oficina Principal", "", "Intervalo:", filterVal],
             [""],
-            ["FECHA:", "ENTRADA:", "SALIDA:", "DURACIÓN:"], // Encabezados de tabla
+            ["FECHA:", "ENTRADA:", "SALIDA:", "DURACIÓN:"], 
         ];
 
         paired.forEach(p => {

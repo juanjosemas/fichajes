@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="style.css">
     <!-- Librería Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Librerías PDF (jsPDF y AutoTable) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <!-- Librerías Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
@@ -36,6 +39,7 @@
                 <a href="#" onclick="document.getElementById('import-file').click()">📂 Restaurar Copia</a>
                 <input type="file" id="import-file" style="display:none" onchange="app.importBackup(event)">
                 <a href="#" onclick="app.generateExcel()">📊 Exportar Excel</a>
+                <a href="#" onclick="app.generatePDF()">📄 Exportar PDF</a>
             </div>
             <hr>
             <a href="#" onclick="app.logout()" class="logout-link">🚪 Cerrar sesión</a>
@@ -87,7 +91,8 @@
                     <input type="month" id="filter-date-emp" onchange="app.renderEmployeePanel()">
                 </div>
                 <div id="emp-history"></div>
-                <button class="btn-main" style="margin-top:10px; font-family: sans-serif; font-size: 0.9rem;" onclick="app.generateIndividualExcel(app.currentUser.id, 'filter-date-emp')">📄 Descargar Informe Mes</button>
+                <button class="btn-main" style="margin-top:10px; font-family: sans-serif; font-size: 0.9rem;" onclick="app.generateIndividualExcel(app.currentUser.id, 'filter-date-emp')">📊 Descargar Informe Excel</button>
+                <button class="btn-main" style="margin-top:5px; font-family: sans-serif; font-size: 0.9rem; background-color: #e67e22;" onclick="app.generateIndividualPDF(app.currentUser.id, 'filter-date-emp')">📄 Descargar Informe PDF</button>
             </div>
         </section>
 
@@ -115,6 +120,7 @@
                 </div>
                 <div id="admin-employee-logs-detail"></div>
                 <button class="btn-success" style="margin-top:10px; margin-bottom: 5px;" onclick="app.generateIndividualExcel(null, 'filter-date-admin-detail')">📊 Generar Informe Excel</button>
+                <button class="btn-success" style="margin-top:0px; margin-bottom: 5px; background-color: #e67e22;" onclick="app.generateIndividualPDF(null, 'filter-date-admin-detail')">📄 Generar Informe PDF</button>
                 <button class="btn-secondary" onclick="document.getElementById('admin-employee-detail-card').style.display='none'">Cerrar</button>
             </div>
         </section>

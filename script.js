@@ -1,3 +1,5 @@
+
+
 /** 
  * CONFIGURACIÓN DE FIREBASE 
  **/
@@ -224,6 +226,12 @@ const app = {
     },
 
     renderEmployeePanel: function() {
+        // NUEVA LÓGICA: Solo mostramos la tarjeta de registros si el usuario es administrador
+        const historyCard = document.getElementById('emp-history-card');
+        if (historyCard) {
+            historyCard.style.display = (this.currentUser.role === 'admin') ? 'block' : 'none';
+        }
+
         const uLogs = this.logs.filter(l => l.userId === this.currentUser.id);
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-emp');
         const paired = this.getPairedLogs(filtered);

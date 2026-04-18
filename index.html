@@ -78,11 +78,19 @@
 
         <!-- EMPLEADO -->
         <section id="view-employee" class="view">
+            <!-- Reloj Digital Superior -->
+            <div id="digital-clock" class="digital-clock">00:00:00</div>
+            
             <div class="card">
                 <div id="status-badge" class="badge">Estado</div>
                 <h3 id="emp-status-text">...</h3>
                 <button id="btn-in" class="btn-punch btn-success" onclick="app.punch('ENTRADA')">Fichar entrada</button>
                 <button id="btn-out" class="btn-punch btn-danger" style="display:none;" onclick="app.punch('SALIDA')">Fichar salida</button>
+                
+                <!-- Info Jornada Actual -->
+                <div id="today-stats" class="today-stats">
+                    <p><b>Hoy:</b> <span id="today-in">--:--</span> | <span id="today-out">--:--</span></p>
+                </div>
             </div>
             <!-- He añadido el ID emp-history-card a la siguiente tarjeta -->
             <div class="card" id="emp-history-card">

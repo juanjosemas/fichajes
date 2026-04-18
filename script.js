@@ -1,5 +1,3 @@
-
-
 /** 
  * CONFIGURACIÓN DE FIREBASE 
  **/
@@ -43,6 +41,9 @@ const app = {
             this.refreshCurrentView();
         });
 
+        // Iniciar reloj digital
+        this.startClock();
+
         // Mes actual por defecto al cargar
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -59,6 +60,16 @@ const app = {
             this.setupUI(this.currentUser);
             this.nav('view-home');
         }
+    },
+
+    // FUNCIÓN RELOJ DIGITAL EN VIVO
+    startClock: function() {
+        setInterval(() => {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('es-ES', { hour12: false });
+            const el = document.getElementById('digital-clock');
+            if(el) el.innerText = timeStr;
+        }, 1000);
     },
 
     saveData: function() {
@@ -233,6 +244,19 @@ const app = {
         }
 
         const uLogs = this.logs.filter(l => l.userId === this.currentUser.id);
+        
+        // --- LÓGICA PARA JORNADA DE HOY (SÓLO DÍA EN CURSO) ---
+        const todayStr = new Date().toLocaleDateString(); // Obtenemos fecha de hoy: "DD/MM/AAAA"
+        const logsToday = uLogs.filter(l => new Date(l.timestamp).toLocaleDateString() === todayStr);
+        
+        // Buscamos el primer fichaje de entrada de hoy y el último de salida de hoy
+        const lastIn = logsToday.filter(l => l.type === 'ENTRADA').shift(); // shift() coge el primero del día
+        const lastOut = logsToday.filter(l => l.type === 'SALIDA').pop();   // pop() coge el último del día
+        
+        document.getElementById('today-in').innerText = lastIn ? 'Entrada: ' + this.formatTimeDisplay(lastIn.time) : 'Entrada: --:--';
+        document.getElementById('today-out').innerText = lastOut ? 'Salida: ' + this.formatTimeDisplay(lastOut.time) : 'Salida: --:--';
+        // -----------------------------------------------------
+
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-emp');
         const paired = this.getPairedLogs(filtered);
         const isWorking = uLogs.length > 0 && uLogs[uLogs.length-1].type === 'ENTRADA';

@@ -151,17 +151,22 @@ button { /* Estilo base para todos los botones de la aplicación */
     color: white; /* Color del texto en blanco */
     font-family: Piedra; /* Tipografía Piedra */
     font-size: 1.2rem; /* Tamaño de fuente de 1.2 rems */
+    letter-spacing: 3px;
+    font-style: italic;
 }
 
 .btn-punch { /* Estilo para los botones de fichar entrada y salida */
-    font-size: 1.1rem; /* Tamaño de fuente de 1.1 rems */
+    font-size: 1.4rem; /* Tamaño de fuente de 1.1 rems */
     padding: 16px; /* Aumenta el relleno para que el botón sea más fácil de pulsar en móvil */
     margin: 8px 0; /* Margen de 8 píxeles arriba y abajo */
+    font-family: Piedra;
+    font-style: italic; /* Aplica el estilo de letra cursiva */
+    letter-spacing: 3px;
 }
 
 .btn-success { /* Botón de color verde para acciones positivas */
     background-color: var(--success); /* Aplica el color verde de la variable success */
-    color: white; /* Texto en blanco */
+    color: black; /* Texto en negro */
 }
 
 .btn-danger { /* Botón de color rojo para acciones de detención o borrado */
@@ -314,7 +319,7 @@ button { /* Estilo base para todos los botones de la aplicación */
 .today-stats { /* Contenedor para la información de fichajes del día actual */
     margin-top: 15px; /* Espacio de 15 píxeles por encima del texto */
     padding-top: 10px; /* Relleno interno superior */
-    border-top: 1px solid rgba(255, 255, 255, 0.2); /* Línea divisoria fina y suave */
+    border-top: 2px solid rgba(255, 255, 255, 0.8); /* Línea divisoria fina y suave */
     font-size: 1rem; /* Tamaño de fuente estándar */
     color: black; /* Texto en negro */
     font-family: Sriracha;

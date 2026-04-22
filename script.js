@@ -228,7 +228,7 @@ const app = {
         }
     },
 
-    // --- FUNCIÓN CORREGIDA: REFRESCAR DETALLE DE EMPLEADO ---
+    // REFRESCAR DETALLE DE EMPLEADO
     refreshCurrentDetail: function() {
         const title = document.getElementById('detail-employee-name').innerText;
         const empName = title.replace('Jornadas de ', '');
@@ -237,7 +237,7 @@ const app = {
     },
 
     renderEmployeePanel: function() {
-        // NUEVA LÓGICA: Solo mostramos la tarjeta de registros si el usuario es administrador
+        // Solo mostramos la tarjeta de registros si el usuario es administrador
         const historyCard = document.getElementById('emp-history-card');
         if (historyCard) {
             historyCard.style.display = (this.currentUser.role === 'admin') ? 'block' : 'none';
@@ -245,17 +245,15 @@ const app = {
 
         const uLogs = this.logs.filter(l => l.userId === this.currentUser.id);
         
-        // --- LÓGICA PARA JORNADA DE HOY (SÓLO DÍA EN CURSO) ---
-        const todayStr = new Date().toLocaleDateString(); // Obtenemos fecha de hoy: "DD/MM/AAAA"
+        // LÓGICA PARA JORNADA DE HOY
+        const todayStr = new Date().toLocaleDateString(); 
         const logsToday = uLogs.filter(l => new Date(l.timestamp).toLocaleDateString() === todayStr);
         
-        // Buscamos el primer fichaje de entrada de hoy y el último de salida de hoy
-        const lastIn = logsToday.filter(l => l.type === 'ENTRADA').shift(); // shift() coge el primero del día
-        const lastOut = logsToday.filter(l => l.type === 'SALIDA').pop();   // pop() coge el último del día
+        const lastIn = logsToday.filter(l => l.type === 'ENTRADA').shift(); 
+        const lastOut = logsToday.filter(l => l.type === 'SALIDA').pop();   
         
         document.getElementById('today-in').innerText = lastIn ? 'Entrada: ' + this.formatTimeDisplay(lastIn.time) : 'Entrada: --:--';
         document.getElementById('today-out').innerText = lastOut ? 'Salida: ' + this.formatTimeDisplay(lastOut.time) : 'Salida: --:--';
-        // -----------------------------------------------------
 
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-emp');
         const paired = this.getPairedLogs(filtered);
@@ -288,7 +286,6 @@ const app = {
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-admin-detail');
         const paired = this.getPairedLogs(filtered);
         document.getElementById('detail-employee-name').innerText = `Jornadas de ${user.name}`;
-        // Guardamos el ID actual en un atributo para el botón de excel
         document.getElementById('admin-employee-detail-card').dataset.currentUserDetail = userId;
         document.getElementById('admin-employee-logs-detail').innerHTML = paired.map(p => `
             <div class="user-row">
@@ -325,26 +322,45 @@ const app = {
         }).join('') || 'Sin empleados.';
     },
 
+    // FUNCIÓN MEJORADA: HISTORIAL GLOBAL AGRUPADO POR FECHA
     renderAdminLogs: function() {
         const filtered = this.filterLogsByMonth(this.logs, 'filter-date-admin-logs');
         const paired = this.getPairedLogs(filtered);
-        document.getElementById('admin-logs-list').innerHTML = paired.map(p => `
-            <div class="user-row">
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
-                    <strong>👤 ${p.userName}</strong>
-                    <div>
-                        ${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp})">🗑️</button>` : ''}
-                        ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp})">🗑️</button>` : ''}
+        
+        let html = '';
+        let lastDate = '';
+
+        paired.forEach(p => {
+            // Obtenemos la fecha del registro actual
+            const currentDate = p.entry ? p.entry.time.split(',')[0] : (p.exit ? p.exit.time.split(',')[0] : '--');
+            
+            // Si la fecha cambia, insertamos un encabezado de día
+            if (currentDate !== lastDate) {
+                html += `<div style="text-align:left; margin:15px 0 5px 5px; font-weight:bold; color:var(--primary); border-bottom:1px solid #ccc;">📅 Fecha: ${currentDate}</div>`;
+                lastDate = currentDate;
+            }
+
+            // Añadimos la fila del empleado para ese día
+            html += `
+                <div class="user-row">
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
+                        <strong>👤 ${p.userName}</strong>
+                        <div>
+                            ${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp})">🗑️</button>` : ''}
+                            ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp})">🗑️</button>` : ''}
+                        </div>
+                    </div>
+                    <small>Entrada: ${p.entry ? this.formatTimeDisplay(p.entry.time) : '--'} | Salida: ${p.exit ? this.formatTimeDisplay(p.exit.time) : 'En curso...'}</small>
+                    ${p.exit && p.entry ? `<b style="color:var(--success)">⏱️ Total: ${this.formatDuration(p.duration)}</b>` : ''}
+                    <div style="margin-top:5px">
+                        ${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}
+                        ${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}
                     </div>
                 </div>
-                <small>E: ${p.entry ? this.formatTimeDisplay(p.entry.time) : '--'} | S: ${p.exit ? this.formatTimeDisplay(p.exit.time) : '...'}</small>
-                ${p.exit && p.entry ? `<b style="color:var(--success)">⏱️ ${this.formatDuration(p.duration)}</b>` : ''}
-                <div style="margin-top:5px">
-                    ${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}
-                    ${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}
-                </div>
-            </div>
-        `).join('') || '<p style="margin-top:10px">Sin datos este mes.</p>';
+            `;
+        });
+
+        document.getElementById('admin-logs-list').innerHTML = html || '<p style="margin-top:10px">Sin datos este mes.</p>';
     },
 
     renderAdminUsers: function() {
@@ -456,7 +472,6 @@ const app = {
         doc.save(`Fichajes_${filterVal || 'Historico'}.pdf`);
     },
 
-    // --- NUEVA FUNCIÓN: INFORME INDIVIDUAL CON FORMATO DE FOTO (PDF) ---
     generateIndividualPDF: function(userId, inputFilterId) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -470,9 +485,8 @@ const app = {
 
         let totalMs = 0;
 
-        // Cabecera del informe
         doc.setFontSize(16);
-        doc.setTextColor(230, 126, 34); // Naranja corporativo
+        doc.setTextColor(230, 126, 34); 
         doc.text("INFORME DE JORNADAS", 105, 15, { align: "center" });
 
         doc.setFontSize(10);
@@ -485,7 +499,6 @@ const app = {
         doc.text(`Nº Afiliación: ---`, 120, 30);
         doc.text(`Mes: ${filterVal}`, 120, 35);
 
-        // Tabla de datos
         const head = [["FECHA", "ENTRADA", "SALIDA", "DURACIÓN"]];
         const body = paired.map(p => {
             const fecha = p.entry ? p.entry.time.split(',')[0] : (p.exit ? p.exit.time.split(',')[0] : '--');
@@ -506,14 +519,12 @@ const app = {
 
         let finalY = doc.lastAutoTable.finalY + 10;
 
-        // Resumen
         doc.setFont(undefined, 'bold');
         doc.text("RESUMEN:", 14, finalY);
         doc.setFont(undefined, 'normal');
         doc.text(`TOTAL TIEMPO TRABAJADO: ${this.formatDuration(totalMs)}`, 14, finalY + 7);
         doc.text(`TIEMPO TOTAL: ${this.formatDuration(totalMs)}`, 14, finalY + 14);
 
-        // Firmas
         finalY += 40;
         doc.text("Firma empleado:", 14, finalY);
         doc.text("__________________________", 14, finalY + 10);
@@ -524,7 +535,6 @@ const app = {
         doc.save(`Informe_${user.name}_${filterVal}.pdf`);
     },
 
-    // --- FUNCIÓN: INFORME INDIVIDUAL CON FORMATO DE FOTO (EXCEL) ---
     generateIndividualExcel: function(userId, inputFilterId) {
         const id = userId || document.getElementById('admin-employee-detail-card').dataset.currentUserDetail;
         const user = this.users.find(u => u.id === id);

@@ -322,7 +322,7 @@ const app = {
         }).join('') || 'Sin empleados.';
     },
 
-    // FUNCIÓN MEJORADA: HISTORIAL GLOBAL AGRUPADO POR FECHA
+    // FUNCIÓN HISTORIAL GLOBAL AGRUPADO POR FECHA (FECHA EN NEGRO)
     renderAdminLogs: function() {
         const filtered = this.filterLogsByMonth(this.logs, 'filter-date-admin-logs');
         const paired = this.getPairedLogs(filtered);
@@ -334,9 +334,9 @@ const app = {
             // Obtenemos la fecha del registro actual
             const currentDate = p.entry ? p.entry.time.split(',')[0] : (p.exit ? p.exit.time.split(',')[0] : '--');
             
-            // Si la fecha cambia, insertamos un encabezado de día
+            // Si la fecha cambia, insertamos un encabezado de día (Color NEGRO)
             if (currentDate !== lastDate) {
-                html += `<div style="text-align:left; margin:15px 0 5px 5px; font-weight:bold; color:var(--primary); border-bottom:1px solid #ccc;">📅 Fecha: ${currentDate}</div>`;
+                html += `<div style="text-align:left; margin:15px 0 5px 5px; font-weight:bold; color:black; border-bottom:1px solid #ccc;">📅 Fecha: ${currentDate}</div>`;
                 lastDate = currentDate;
             }
 

@@ -519,6 +519,14 @@ const app = {
 
         let finalY = doc.lastAutoTable.finalY + 10;
 
+        // FRASE SOBRE TIEMPO DE DESCANSO
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'italic');
+        doc.text("*En el registro horario esta incluido el tiempo de descanso.", 14, finalY);
+        
+        finalY += 10; // Bajamos la posición para el siguiente bloque
+
+        doc.setFontSize(10);
         doc.setFont(undefined, 'bold');
         doc.text("RESUMEN:", 14, finalY);
         doc.setFont(undefined, 'normal');

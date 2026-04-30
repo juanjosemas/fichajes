@@ -469,6 +469,13 @@ const app = {
         ]);
 
         doc.autoTable({ head, body, startY: 35 });
+
+        // AÑADIMOS LA FRASE DE DESCANSO EN EL PDF GLOBAL
+        let finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'bold');
+        doc.text("*En el registro horario esta incluido el tiempo de descanso.", 14, finalY);
+
         doc.save(`Fichajes_${filterVal || 'Historico'}.pdf`);
     },
 

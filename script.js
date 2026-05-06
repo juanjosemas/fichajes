@@ -474,7 +474,7 @@ const app = {
         let finalY = doc.lastAutoTable.finalY + 10;
         doc.setFontSize(11);
         doc.setFont(undefined, 'bold');
-        doc.text("*En el registro horario esta incluido el tiempo de descanso.", 14, finalY);
+        doc.text("*En este registro horario estan incluidos los 30 minutos de descanso.", 14, finalY);
 
         doc.save(`Fichajes_${filterVal || 'Historico'}.pdf`);
     },

@@ -28,15 +28,15 @@ const app = {
 
     // INICIO
     init: function() {
-        // Escuchamos los cambios de forma más eficiente
+        // Escuchamos los cambios en la raíz para sincronizar la app
         db.ref('/').on('value', (snapshot) => {
             const data = snapshot.val() || {}; 
             
-            // Convertimos los objetos de Firebase en arrays para que tu código siga funcionando igual
+            // Convertimos objetos en arrays para que la lógica de la app funcione
             this.users = data.users ? Object.values(data.users) : [];
             this.logs = data.logs ? Object.values(data.logs) : [];
 
-            // Solo crea el admin si la lista de usuarios está totalmente vacía
+            // Si la base está vacía, creamos al administrador
             if (this.users.length === 0) {
                 const adminUser = { id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' };
                 db.ref('users/admin').set(adminUser); 
@@ -47,7 +47,7 @@ const app = {
         // Iniciar reloj digital
         this.startClock();
 
-        // Mes actual por defecto al cargar
+        // Configuración de filtros de fecha por defecto (Mes Actual)
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         setTimeout(() => {
@@ -57,6 +57,7 @@ const app = {
             });
         }, 300);
 
+        // Recuperar sesión si existe
         const savedSession = localStorage.getItem('session');
         if (savedSession) {
             this.currentUser = JSON.parse(savedSession);
@@ -65,7 +66,7 @@ const app = {
         }
     },
 
-    // FUNCIÓN RELOJ DIGITAL EN VIVO
+    // RELOJ DIGITAL EN VIVO
     startClock: function() {
         setInterval(() => {
             const now = new Date();
@@ -75,26 +76,7 @@ const app = {
         }, 1000);
     },
 
-    // AHORA DIFERENCIAMOS ENTRE GUARDAR USUARIOS O LOGS PARA NO SOBREESCRIBIR TODO
-    saveUsers: function() {
-        // Convertimos el array en un objeto para Firebase usando el ID como clave
-        const usersObj = {};
-        this.users.forEach(u => { usersObj[u.id] = u; });
-        db.ref('users').set(usersObj);
-    },
-
-    saveLogs: function() {
-        // Convertimos el array en un objeto usando el timestamp como clave
-        const logsObj = {};
-        this.logs.forEach(l => { logsObj[l.timestamp] = l; });
-        db.ref('logs').set(logsObj);
-    },
-
-    toggleMenu: function() {
-        const isActive = document.getElementById('sidebar').classList.toggle('active'); 
-        document.getElementById('overlay').style.display = isActive ? 'block' : 'none'; 
-    },
-
+    // NAVEGACIÓN ENTRE VISTAS
     nav: function(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
         const targetView = document.getElementById(viewId);
@@ -108,10 +90,14 @@ const app = {
         if(viewId === 'view-employee') this.renderEmployeePanel(); 
     },
 
+    toggleMenu: function() {
+        const isActive = document.getElementById('sidebar').classList.toggle('active'); 
+        document.getElementById('overlay').style.display = isActive ? 'block' : 'none'; 
+    },
+
     login: function() {
         const u = document.getElementById('login-user').value.trim().toLowerCase(); 
         const p = document.getElementById('login-pass').value.trim(); 
-        
         const user = this.users.find(user => user.id === u || user.name.toLowerCase() === u);
         
         if (user && user.pass === p) { 
@@ -143,12 +129,10 @@ const app = {
         if (!timeStr) return "--:--";
         const parts = timeStr.split(', ');
         if (parts.length < 2) return timeStr;
-        const timePart = parts[1];
-        const timeParts = timePart.split(':');
-        if (timeParts.length < 2) return timePart;
-        return `${timeParts[0]}:${timeParts[1]}`; 
+        return parts[1].split(':').slice(0,2).join(':'); 
     },
 
+    // FUNCIÓN DE FICHAJE CON GPS
     punch: function(type) {
         if (!navigator.geolocation) return alert("GPS no disponible");
         const btn = type === 'ENTRADA' ? document.getElementById('btn-in') : document.getElementById('btn-out');
@@ -157,7 +141,7 @@ const app = {
 
         navigator.geolocation.getCurrentPosition((pos) => {
             const now = new Date();
-            const logId = now.getTime(); // Usamos el timestamp como ID único del registro
+            const logId = now.getTime();
             const newLog = {
                 userId: this.currentUser.id, 
                 userName: this.currentUser.name,
@@ -167,13 +151,12 @@ const app = {
                 coords: [pos.coords.latitude, pos.coords.longitude]
             };
             
-            // Guardamos solo este registro en lugar de todo el array
-            db.ref('logs/' + logId).set(newLog)
-                .then(() => {
-                    btn.disabled = false;
-                    btn.innerText = originalText;
-                    alert("Fichaje guardado correctamente.");
-                });
+            // Guardamos directamente en la carpeta logs
+            db.ref('logs/' + logId).set(newLog).then(() => {
+                btn.disabled = false;
+                btn.innerText = originalText;
+                alert("Fichaje guardado correctamente.");
+            });
 
         }, (err) => { 
             alert("Error GPS: Activa la ubicación"); 
@@ -181,6 +164,7 @@ const app = {
         }, { enableHighAccuracy: true, timeout: 10000 });
     },
 
+    // EDICIÓN DE REGISTROS (PARA ADMIN)
     editLog: function(timestamp) {
         const log = this.logs.find(l => l.timestamp === timestamp);
         if (!log) return;
@@ -193,11 +177,12 @@ const app = {
                 const nD = new Date(dP[2], dP[1]-1, dP[0], tP[0], tP[1], tP[2]);
                 if (isNaN(nD.getTime())) throw new Error();
                 
-                // Actualizamos solo ese log en Firebase
                 const updatedLog = {...log, time: newTimeStr, timestamp: nD.getTime()};
-                db.ref('logs/' + timestamp).remove(); // Borramos el antiguo si el timestamp cambió
-                db.ref('logs/' + updatedLog.timestamp).set(updatedLog);
-
+                
+                // Borramos el antiguo y ponemos el nuevo (por si cambió el timestamp)
+                db.ref('logs/' + timestamp).remove().then(() => {
+                    db.ref('logs/' + updatedLog.timestamp).set(updatedLog);
+                });
             } catch (e) { alert("Formato incorrecto"); }
         }
     },
@@ -242,7 +227,6 @@ const app = {
     refreshCurrentView: function() {
         const active = document.querySelector('.view.active');
         if (active) {
-            // Refrescamos según la vista activa
             const v = active.id;
             if(v === 'view-admin-status') this.renderAdminStatus(); 
             if(v === 'view-admin-employees') this.renderAdminUsers(); 
@@ -279,7 +263,8 @@ const app = {
 
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-emp');
         const paired = this.getPairedLogs(filtered);
-        const isWorking = uLogs.length > 0 && uLogs.sort((a,b)=>a.timestamp-b.timestamp)[uLogs.length-1].type === 'ENTRADA';
+        const uLogsSorted = [...uLogs].sort((a,b)=>a.timestamp - b.timestamp);
+        const isWorking = uLogsSorted.length > 0 && uLogsSorted[uLogsSorted.length-1].type === 'ENTRADA';
         
         document.getElementById('status-badge').innerText = isWorking ? 'TRABAJANDO' : 'FUERA';
         document.getElementById('status-badge').style.background = isWorking ? 'var(--success)' : 'var(--danger)';
@@ -291,12 +276,8 @@ const app = {
                 <b>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</b>
                 <small>${p.entry ? 'E: ' + this.formatTimeDisplay(p.entry.time) : '--'} | ${p.exit ? 'S: ' + this.formatTimeDisplay(p.exit.time) : '...'}</small>
                 ${p.exit && p.entry ? `<b style="color:var(--primary)">Total: ${this.formatDuration(p.duration)}</b>` : ''}
-                <div style="margin-top:5px">
-                    ${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}
-                    ${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}
-                </div>
             </div>
-        `).join('') || '<p style="margin-top:10px">Sin registros este mes.</p>';
+        `).join('') || '<p>Sin registros este mes.</p>';
     },
 
     renderAdminByEmployee: function() {
@@ -314,7 +295,7 @@ const app = {
         document.getElementById('admin-employee-detail-card').dataset.currentUserDetail = userId;
         document.getElementById('admin-employee-logs-detail').innerHTML = paired.map(p => `
             <div class="user-row">
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
+                <div style="display:flex; justify-content:space-between; width:100%">
                     <b>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</b>
                     <div>
                         ${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp})">🗑️</button>` : ''}
@@ -323,12 +304,8 @@ const app = {
                 </div>
                 <small>${p.entry ? 'E: ' + this.formatTimeDisplay(p.entry.time) : '--'} | ${p.exit ? 'S: ' + this.formatTimeDisplay(p.exit.time) : 'En curso'}</small>
                 ${p.exit && p.entry ? `<b style="color:var(--primary)">Horas: ${this.formatDuration(p.duration)}</b>` : ''}
-                <div style="margin-top:5px">
-                    ${p.entry ? `<a href="https://www.google.com/maps?q=${p.entry.coords[0]},${p.entry.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa E</a>` : ''}
-                    ${p.exit ? ` | <a href="https://www.google.com/maps?q=${p.exit.coords[0]},${p.exit.coords[1]}" target="_blank" style="font-size:0.7rem; color:var(--primary)">📍 Mapa S</a>` : ''}
-                </div>
             </div>
-        `).join('') || '<p style="margin-top:10px">Sin datos este mes.</p>';
+        `).join('') || '<p>Sin datos este mes.</p>';
         document.getElementById('admin-employee-detail-card').style.display = 'block';
     },
 
@@ -360,18 +337,18 @@ const app = {
             }
             html += `
                 <div class="user-row">
-                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
+                    <div style="display:flex; justify-content:space-between; width:100%">
                         <strong>👤 ${p.userName}</strong>
                         <div>
-                            ${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.entry.timestamp})">🗑️</button>` : ''}
-                            ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button><button class="btn-small btn-del" onclick="app.deleteLog(${p.exit.timestamp})">🗑️</button>` : ''}
+                            ${p.entry ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.entry.timestamp})">✏️</button>` : ''}
+                            ${p.exit ? `<button class="btn-small btn-edit" onclick="app.editLog(${p.exit.timestamp})">✏️</button>` : ''}
                         </div>
                     </div>
-                    <small>Entrada: ${p.entry ? this.formatTimeDisplay(p.entry.time) : '--'} | Salida: ${p.exit ? this.formatTimeDisplay(p.exit.time) : 'En curso...'}</small>
-                    ${p.exit && p.entry ? `<b style="color:var(--success)">⏱️ Total: ${this.formatDuration(p.duration)}</b>` : ''}
+                    <small>E: ${p.entry ? this.formatTimeDisplay(p.entry.time) : '--'} | S: ${p.exit ? this.formatTimeDisplay(p.exit.time) : 'En curso'}</small>
+                    ${p.exit && p.entry ? `<b style="color:var(--success)">⏱️ ${this.formatDuration(p.duration)}</b>` : ''}
                 </div>`;
         });
-        document.getElementById('admin-logs-list').innerHTML = html || '<p style="margin-top:10px">Sin datos este mes.</p>';
+        document.getElementById('admin-logs-list').innerHTML = html || '<p>Sin registros este mes.</p>';
     },
 
     renderAdminUsers: function() {
@@ -436,8 +413,11 @@ const app = {
         const reader = new FileReader();
         reader.onload = (e) => {
             const data = JSON.parse(e.target.result);
-            if (confirm("¿Sobrescribir datos de la NUBE?")) {
-                db.ref('/').set(data); 
+            if (confirm("¿Restaurar copia de seguridad?")) {
+                // Restauramos carpeta por carpeta para evitar borrar la raíz
+                if(data.users) db.ref('users').set(data.users);
+                if(data.logs) db.ref('logs').set(data.logs);
+                alert("Copia restaurada correctamente.");
             }
         };
         reader.readAsText(event.target.files[0]);
@@ -503,18 +483,13 @@ const app = {
         const paired = this.getPairedLogs(filtered).reverse(); 
 
         let totalMs = 0;
-
         doc.setFontSize(16);
         doc.setTextColor(230, 126, 34); 
         doc.text("INFORME DE JORNADAS", 105, 15, { align: "center" });
-
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
         doc.text(`Empresa: Ecostruct S.L.`, 14, 25);
-        doc.text(`CIF: B-19343441`, 14, 30);
-        doc.text(`Centro: Oficina Principal`, 14, 35);
         doc.text(`Empleado: ${user.name}`, 120, 25);
-        doc.text(`Mes: ${filterVal}`, 120, 35);
 
         const head = [["FECHA", "ENTRADA", "SALIDA", "DURACIÓN"]];
         const body = paired.map(p => {
@@ -535,17 +510,7 @@ const app = {
         doc.setFontSize(11);
         doc.setFont(undefined, 'bold');
         doc.text("*En este registro horario estan incluidos los 30 minutos de descanso.", 14, finalY);
-        
-        finalY += 10;
-        doc.setFontSize(10);
-        doc.text(`TOTAL TIEMPO TRABAJADO: ${this.formatDuration(totalMs)}`, 14, finalY + 7);
-
-        finalY += 40;
-        doc.text("Firma empleado:", 14, finalY);
-        doc.text("__________________________", 14, finalY + 10);
-        doc.text("Firma y sello empresa:", 120, finalY);
-        doc.text("__________________________", 120, finalY + 10);
-
+        doc.text(`TOTAL TIEMPO TRABAJADO: ${this.formatDuration(totalMs)}`, 14, finalY + 10);
         doc.save(`Informe_${user.name}_${filterVal}.pdf`);
     },
 
@@ -561,8 +526,6 @@ const app = {
         const rows = [
             ["INFORME DE JORNADAS"],
             ["Empresa:", "Ecostruct S.L.", "", "Empleado:", user.name],
-            ["CIF:", "B-19343441", "", "Intervalo:", filterVal],
-            [""],
             ["FECHA:", "ENTRADA:", "SALIDA:", "DURACIÓN:"], 
         ];
 

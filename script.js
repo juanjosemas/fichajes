@@ -28,12 +28,12 @@ const app = {
 
     // INICIO: Escucha cambios de forma granular para evitar borrados masivos
     init: function() {
-        // Escuchamos Usuarios
+        // Escuchamos Usuarios de forma independiente
         db.ref('users').on('value', (snapshot) => {
             const data = snapshot.val() || {};
             this.users = Object.values(data);
             
-            // Si no hay usuarios (base vacía), creamos el admin inicial
+            // Si la base está vacía, creamos el admin inicial
             if (this.users.length === 0) {
                 const adminUser = { id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' };
                 db.ref('users/admin').set(adminUser);
@@ -41,13 +41,15 @@ const app = {
             this.refreshCurrentView();
         });
 
-        // Escuchamos Logs (Fichajes)
+        // Escuchamos Logs (Fichajes) de forma independiente
         db.ref('logs').on('value', (snapshot) => {
             const data = snapshot.val() || {};
             this.logs = [];
             for (let key in data) {
                 this.logs.push({ ...data[key], fbKey: key });
             }
+            // Ordenamos los logs por tiempo para que la lógica de "Estado" sea correcta
+            this.logs.sort((a, b) => a.timestamp - b.timestamp);
             this.refreshCurrentView();
         });
 
@@ -144,12 +146,13 @@ const app = {
         return `${timeParts[0]}:${timeParts[1]}`; 
     },
 
-    // punch: Realiza un fichaje (entrada/salida) enviando solo ese registro a Firebase
+    // punch: Realiza un fichaje y lo envía a Firebase de forma aislada
     punch: function(type) {
         if (!navigator.geolocation) return alert("GPS no disponible");
         const btn = type === 'ENTRADA' ? document.getElementById('btn-in') : document.getElementById('btn-out');
         const originalText = btn.innerText;
         btn.innerText = "Ubicando..."; btn.disabled = true;
+
         navigator.geolocation.getCurrentPosition((pos) => {
             const now = new Date();
             const newLog = {
@@ -158,18 +161,23 @@ const app = {
                 coords: [pos.coords.latitude, pos.coords.longitude]
             };
             
-            // Usamos .push() para añadir el log de forma independiente
-            db.ref('logs').push(newLog).then(() => {
-                btn.disabled = false; btn.innerText = originalText;
-                alert("Fichaje guardado correctamente.");
-            });
+            db.ref('logs').push(newLog)
+                .then(() => {
+                    btn.disabled = false; btn.innerText = originalText;
+                    alert("Fichaje guardado correctamente.");
+                })
+                .catch((error) => {
+                    btn.disabled = false; btn.innerText = originalText;
+                    alert("Error al guardar: " + error.message);
+                });
+
         }, (err) => { 
             alert("Error GPS: Activa la ubicación"); 
             btn.disabled = false; btn.innerText = originalText;
         }, { enableHighAccuracy: true, timeout: 10000 });
     },
 
-    // editLog: Permite al admin modificar la hora de un fichaje específico
+    // editLog: Permite al admin modificar un registro específico
     editLog: function(timestamp) {
         const log = this.logs.find(l => l.timestamp === timestamp);
         if (!log || !log.fbKey) return;
@@ -190,7 +198,7 @@ const app = {
         }
     },
 
-    // deleteLog: Elimina un único registro de fichaje de Firebase
+    // deleteLog: Elimina un registro de fichaje usando su clave de Firebase
     deleteLog: function(timestamp) {
         const log = this.logs.find(l => l.timestamp === timestamp);
         if (!log || !log.fbKey) return;
@@ -199,14 +207,14 @@ const app = {
         }
     },
 
-    // formatDuration: Calcula y formatea la diferencia de tiempo entre dos marcas
+    // formatDuration: Convierte milisegundos a formato horas y minutos
     formatDuration: function(ms) {
         if (ms <= 0) return "0h 0m";
         const min = Math.floor(ms / 60000);
         return `${Math.floor(min / 60)}h ${min % 60}m`;
     },
 
-    // getPairedLogs: Empareja cada entrada con su salida correspondiente
+    // getPairedLogs: Empareja cada ENTRADA con su SALIDA para el historial
     getPairedLogs: function(logsToProcess) {
         const sorted = [...logsToProcess].sort((a, b) => a.timestamp - b.timestamp);
         const paired = []; const open = {};
@@ -222,7 +230,7 @@ const app = {
         return paired.reverse();
     },
 
-    // filterLogsByMonth: Filtra el array de logs por el mes seleccionado
+    // filterLogsByMonth: Filtra el array de logs según el input de tipo month
     filterLogsByMonth: function(logsArray, inputId) {
         const el = document.getElementById(inputId);
         if(!el || !el.value) return logsArray; 
@@ -233,24 +241,28 @@ const app = {
         });
     },
 
-    // refreshCurrentView: Redibuja los datos en la pantalla activa
+    // refreshCurrentView: Redibuja la interfaz cuando hay datos nuevos
     refreshCurrentView: function() {
         const active = document.querySelector('.view.active');
-        if (active) this.nav(active.id);
+        if (active) {
+            if (active.id === 'view-employee') this.renderEmployeePanel();
+            else this.nav(active.id);
+        }
         const detailCard = document.getElementById('admin-employee-detail-card');
         if (detailCard && detailCard.style.display === 'block') {
             this.refreshCurrentDetail();
         }
     },
 
-    // refreshCurrentDetail: Actualiza la tarjeta de detalles del empleado seleccionado
+    // refreshCurrentDetail: Actualiza la vista de detalle de un empleado
     refreshCurrentDetail: function() {
         const userId = document.getElementById('admin-employee-detail-card').dataset.currentUserDetail;
         if (userId) this.viewEmployeeDetail(userId);
     },
 
-    // renderEmployeePanel: Renderiza la vista de fichaje para el empleado
+    // renderEmployeePanel: Determina si el empleado está trabajando y muestra sus botones
     renderEmployeePanel: function() {
+        if(!this.currentUser) return;
         const historyCard = document.getElementById('emp-history-card');
         if (historyCard) {
             historyCard.style.display = (this.currentUser.role === 'admin') ? 'block' : 'none';
@@ -268,6 +280,7 @@ const app = {
 
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-emp');
         const paired = this.getPairedLogs(filtered);
+        
         const isWorking = uLogs.length > 0 && uLogs[uLogs.length-1].type === 'ENTRADA';
         
         document.getElementById('status-badge').innerText = isWorking ? 'TRABAJANDO' : 'FUERA';
@@ -288,13 +301,13 @@ const app = {
         `).join('') || '<p style="margin-top:10px">Sin registros este mes.</p>';
     },
 
-    // renderAdminByEmployee: Lista los botones de cada empleado para ver su historial
+    // renderAdminByEmployee: Listado de empleados para el administrador
     renderAdminByEmployee: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
         document.getElementById('admin-select-employee-list').innerHTML = emps.map(u => `<button class="btn-user-select" onclick="app.viewEmployeeDetail('${u.id}')">👤 ${u.name}</button>`).join('') || 'No hay empleados registrados.';
     },
 
-    // viewEmployeeDetail: Carga y muestra los fichajes de un empleado concreto para el admin
+    // viewEmployeeDetail: Muestra historial detallado de un empleado al administrador
     viewEmployeeDetail: function(userId) {
         const user = this.users.find(u => u.id === userId);
         if (!user) return;
@@ -323,7 +336,7 @@ const app = {
         document.getElementById('admin-employee-detail-card').style.display = 'block';
     },
 
-    // renderAdminStatus: Muestra quién está actualmente fichado y quién no
+    // renderAdminStatus: Muestra quién está trabajando en vivo
     renderAdminStatus: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
         document.getElementById('admin-status-list').innerHTML = emps.map(u => {
@@ -339,7 +352,7 @@ const app = {
         }).join('') || 'Sin empleados.';
     },
 
-    // renderAdminLogs: Muestra el historial de toda la empresa agrupado por día
+    // renderAdminLogs: Muestra todos los fichajes de la empresa por día
     renderAdminLogs: function() {
         const filtered = this.filterLogsByMonth(this.logs, 'filter-date-admin-logs');
         const paired = this.getPairedLogs(filtered);
@@ -374,13 +387,13 @@ const app = {
         document.getElementById('admin-logs-list').innerHTML = html || '<p style="margin-top:10px">Sin datos este mes.</p>';
     },
 
-    // renderAdminUsers: Lista los empleados en el panel de gestión para editarlos/borrarlos
+    // renderAdminUsers: Lista empleados para su gestión administrativa
     renderAdminUsers: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
         document.getElementById('admin-users-list').innerHTML = emps.map(u => `<div class="user-row" style="flex-direction:row; justify-content:space-between; align-items:center;"><div><b>${u.name}</b><br><small>ID: ${u.id}</small></div><div class="user-btns"><button class="btn-small btn-edit" onclick="app.editEmployee('${u.id}')">E</button><button class="btn-small btn-del" onclick="app.deleteEmployee('${u.id}')">X</button></div></div>`).join('') || 'Sin empleados.';
     },
 
-    // saveEmployee: Crea o actualiza un empleado individualmente en Firebase
+    // saveEmployee: Guarda o actualiza un empleado individualmente
     saveEmployee: function() {
         const name = document.getElementById('new-emp-name').value.trim();
         const pass = document.getElementById('new-emp-pass').value.trim();
@@ -395,7 +408,7 @@ const app = {
         });
     },
 
-    // editEmployee: Carga los datos del empleado en el formulario de edición
+    // editEmployee: Prepara el formulario para editar un empleado
     editEmployee: function(id) {
         const user = this.users.find(u => u.id === id);
         document.getElementById('form-title').innerText = "Editar empleado";
@@ -405,7 +418,7 @@ const app = {
         document.getElementById('btn-action-cancel').style.display = "block";
     },
 
-    // resetForm: Restablece el formulario de creación/edición de empleados
+    // resetForm: Limpia el formulario de gestión de empleados
     resetForm: function() {
         document.getElementById('form-title').innerText = "Crear empleado";
         document.getElementById('edit-id').value = "";
@@ -414,14 +427,14 @@ const app = {
         document.getElementById('btn-action-cancel').style.display = "none";
     },
 
-    // deleteEmployee: Borra de forma individual a un usuario de Firebase
+    // deleteEmployee: Elimina a un empleado de la base de datos
     deleteEmployee: function(id) {
         if(confirm("¿Borrar empleado?")){
             db.ref('users/' + id).remove();
         }
     },
 
-    // downloadBackup: Genera un archivo JSON con todos los datos para respaldo local
+    // downloadBackup: Genera copia de seguridad JSON
     downloadBackup: function() {
         const data = { users: this.users, logs: this.logs };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -431,7 +444,7 @@ const app = {
         a.click();
     },
 
-    // importBackup: Sobrescribe la base de datos de Firebase con un archivo JSON externo
+    // importBackup: Sobrescribe la nube con un archivo JSON
     importBackup: function(event) {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -443,7 +456,7 @@ const app = {
         reader.readAsText(event.target.files[0]);
     },
 
-    // generateExcel: Genera el Excel del historial global filtrado por mes
+    // generateExcel: Exporta historial filtrado a Excel
     generateExcel: function() {
         const filterId = this.currentUser.role === 'admin' ? 'filter-date-admin-logs' : 'filter-date-emp';
         const filterVal = document.getElementById(filterId).value;
@@ -462,7 +475,7 @@ const app = {
         XLSX.writeFile(wb, `Fichajes_${filterVal || 'Historico'}.xlsx`);
     },
 
-    // generatePDF: Genera un PDF del historial global
+    // generatePDF: Exporta historial global a PDF
     generatePDF: function() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -492,7 +505,7 @@ const app = {
         doc.save(`Fichajes_${filterVal || 'Historico'}.pdf`);
     },
 
-    // generateIndividualPDF: Genera un informe PDF profesional para firma de un empleado
+    // generateIndividualPDF: Informe oficial individual para firma
     generateIndividualPDF: function(userId, inputFilterId) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -550,7 +563,7 @@ const app = {
         doc.save(`Informe_${user.name}_${filterVal}.pdf`);
     },
 
-    // generateIndividualExcel: Genera el mismo informe individual pero en Excel
+    // generateIndividualExcel: Informe oficial individual en Excel
     generateIndividualExcel: function(userId, inputFilterId) {
         const id = userId || document.getElementById('admin-employee-detail-card').dataset.currentUserDetail;
         const user = this.users.find(u => u.id === id);
@@ -585,4 +598,5 @@ const app = {
     }
 };
 
+// Punto de entrada de la aplicación
 window.onload = () => app.init();

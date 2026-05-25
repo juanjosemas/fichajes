@@ -26,25 +26,33 @@ const app = {
     logs: [], 
     currentUser: null, 
 
-    // INICIO
+    // INICIO: Escucha cambios de forma granular para evitar borrados masivos
     init: function() {
-        db.ref('/').on('value', (snapshot) => {
-            const data = snapshot.val() || {}; 
-            this.users = data.users || [];
-            this.logs = data.logs || [];
-
-            // Solo crea el admin si la lista de usuarios está totalmente vacía
+        // Escuchamos Usuarios
+        db.ref('users').on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            this.users = Object.values(data);
+            
+            // Si no hay usuarios (base vacía), creamos el admin inicial
             if (this.users.length === 0) {
-                this.users = [{ id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' }];
-                this.saveData(); 
+                const adminUser = { id: 'admin', name: 'principal', role: 'admin', pass: 'admin123' };
+                db.ref('users/admin').set(adminUser);
             }
             this.refreshCurrentView();
         });
 
-        // Iniciar reloj digital
+        // Escuchamos Logs (Fichajes)
+        db.ref('logs').on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            this.logs = [];
+            for (let key in data) {
+                this.logs.push({ ...data[key], fbKey: key });
+            }
+            this.refreshCurrentView();
+        });
+
         this.startClock();
 
-        // Mes actual por defecto al cargar
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         setTimeout(() => {
@@ -62,7 +70,7 @@ const app = {
         }
     },
 
-    // FUNCIÓN RELOJ DIGITAL EN VIVO
+    // startClock: Mantiene el reloj digital actualizado cada segundo
     startClock: function() {
         setInterval(() => {
             const now = new Date();
@@ -72,15 +80,13 @@ const app = {
         }, 1000);
     },
 
-    saveData: function() {
-        db.ref('/').set({ users: this.users, logs: this.logs });
-    },
-
+    // toggleMenu: Gestiona la visibilidad del menú lateral y el overlay
     toggleMenu: function() {
         const isActive = document.getElementById('sidebar').classList.toggle('active'); 
         document.getElementById('overlay').style.display = isActive ? 'block' : 'none'; 
     },
 
+    // nav: Controla el cambio de pantallas (vistas)
     nav: function(viewId) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
         const targetView = document.getElementById(viewId);
@@ -94,25 +100,23 @@ const app = {
         if(viewId === 'view-employee') this.renderEmployeePanel(); 
     },
 
+    // login: Autentica al usuario contra la lista de Firebase
     login: function() {
-        // Obtenemos los valores de los inputs
         const u = document.getElementById('login-user').value.trim().toLowerCase(); 
         const p = document.getElementById('login-pass').value.trim(); 
-        
-        // Buscamos el usuario en la lista que viene de Firebase
         const user = this.users.find(user => user.id === u || user.name.toLowerCase() === u);
         
         if (user && user.pass === p) { 
             this.currentUser = user; 
-            // Guardamos la sesión para que no pida login al refrescar
             localStorage.setItem('session', JSON.stringify(this.currentUser));
             this.setupUI(user); 
             this.nav('view-home'); 
         } else {
-            alert("Usuario o contraseña incorrectos. Si acabas de cambiarlos en Firebase, asegúrate de que el ID esté en minúsculas."); 
+            alert("Usuario o contraseña incorrectos."); 
         }
     },
 
+    // setupUI: Ajusta la interfaz (nombre, rol, menú admin) tras el login
     setupUI: function(user) {
         const btn = document.getElementById('menu-btn');
         if(btn) btn.style.display = 'block'; 
@@ -121,6 +125,7 @@ const app = {
         document.getElementById('admin-only-menu').style.display = (user.role === 'admin') ? 'block' : 'none'; 
     },
 
+    // logout: Limpia la sesión actual y redirige al login
     logout: function() {
         this.currentUser = null; 
         localStorage.removeItem('session');
@@ -128,7 +133,7 @@ const app = {
         this.nav('view-login'); 
     },
 
-    // FUNCIÓN PARA QUITAR SEGUNDOS
+    // formatTimeDisplay: Formatea la fecha para ocultar los segundos
     formatTimeDisplay: function(timeStr) {
         if (!timeStr) return "--:--";
         const parts = timeStr.split(', ');
@@ -139,6 +144,7 @@ const app = {
         return `${timeParts[0]}:${timeParts[1]}`; 
     },
 
+    // punch: Realiza un fichaje (entrada/salida) enviando solo ese registro a Firebase
     punch: function(type) {
         if (!navigator.geolocation) return alert("GPS no disponible");
         const btn = type === 'ENTRADA' ? document.getElementById('btn-in') : document.getElementById('btn-out');
@@ -151,20 +157,22 @@ const app = {
                 type: type, time: now.toLocaleString(), timestamp: now.getTime(),
                 coords: [pos.coords.latitude, pos.coords.longitude]
             };
-            this.logs.push(newLog);
-            this.saveData(); 
-            btn.disabled = false;
-            btn.innerText = originalText;
-            alert("Fichaje guardado correctamente.");
+            
+            // Usamos .push() para añadir el log de forma independiente
+            db.ref('logs').push(newLog).then(() => {
+                btn.disabled = false; btn.innerText = originalText;
+                alert("Fichaje guardado correctamente.");
+            });
         }, (err) => { 
             alert("Error GPS: Activa la ubicación"); 
             btn.disabled = false; btn.innerText = originalText;
         }, { enableHighAccuracy: true, timeout: 10000 });
     },
 
+    // editLog: Permite al admin modificar la hora de un fichaje específico
     editLog: function(timestamp) {
         const log = this.logs.find(l => l.timestamp === timestamp);
-        if (!log) return;
+        if (!log || !log.fbKey) return;
         const newTimeStr = prompt("Editar hora (Formato: DD/MM/AAAA, HH:MM:SS)", log.time);
         if (newTimeStr) {
             try {
@@ -173,26 +181,32 @@ const app = {
                 const tP = parts[1].split(':');
                 const nD = new Date(dP[2], dP[1]-1, dP[0], tP[0], tP[1], tP[2]);
                 if (isNaN(nD.getTime())) throw new Error();
-                log.time = newTimeStr;
-                log.timestamp = nD.getTime();
-                this.saveData(); 
+                
+                db.ref('logs/' + log.fbKey).update({
+                    time: newTimeStr,
+                    timestamp: nD.getTime()
+                });
             } catch (e) { alert("Formato incorrecto"); }
         }
     },
 
+    // deleteLog: Elimina un único registro de fichaje de Firebase
     deleteLog: function(timestamp) {
+        const log = this.logs.find(l => l.timestamp === timestamp);
+        if (!log || !log.fbKey) return;
         if (confirm("¿Borrar permanentemente?")) {
-            this.logs = this.logs.filter(l => l.timestamp !== timestamp);
-            this.saveData();
+            db.ref('logs/' + log.fbKey).remove();
         }
     },
 
+    // formatDuration: Calcula y formatea la diferencia de tiempo entre dos marcas
     formatDuration: function(ms) {
         if (ms <= 0) return "0h 0m";
         const min = Math.floor(ms / 60000);
         return `${Math.floor(min / 60)}h ${min % 60}m`;
     },
 
+    // getPairedLogs: Empareja cada entrada con su salida correspondiente
     getPairedLogs: function(logsToProcess) {
         const sorted = [...logsToProcess].sort((a, b) => a.timestamp - b.timestamp);
         const paired = []; const open = {};
@@ -208,6 +222,7 @@ const app = {
         return paired.reverse();
     },
 
+    // filterLogsByMonth: Filtra el array de logs por el mes seleccionado
     filterLogsByMonth: function(logsArray, inputId) {
         const el = document.getElementById(inputId);
         if(!el || !el.value) return logsArray; 
@@ -218,7 +233,7 @@ const app = {
         });
     },
 
-    // REFRESCAR VISTA ACTUAL
+    // refreshCurrentView: Redibuja los datos en la pantalla activa
     refreshCurrentView: function() {
         const active = document.querySelector('.view.active');
         if (active) this.nav(active.id);
@@ -228,24 +243,20 @@ const app = {
         }
     },
 
-    // REFRESCAR DETALLE DE EMPLEADO
+    // refreshCurrentDetail: Actualiza la tarjeta de detalles del empleado seleccionado
     refreshCurrentDetail: function() {
-        const title = document.getElementById('detail-employee-name').innerText;
-        const empName = title.replace('Jornadas de ', '');
-        const user = this.users.find(u => u.name === empName);
-        if (user) this.viewEmployeeDetail(user.id);
+        const userId = document.getElementById('admin-employee-detail-card').dataset.currentUserDetail;
+        if (userId) this.viewEmployeeDetail(userId);
     },
 
+    // renderEmployeePanel: Renderiza la vista de fichaje para el empleado
     renderEmployeePanel: function() {
-        // Solo mostramos la tarjeta de registros si el usuario es administrador
         const historyCard = document.getElementById('emp-history-card');
         if (historyCard) {
             historyCard.style.display = (this.currentUser.role === 'admin') ? 'block' : 'none';
         }
 
         const uLogs = this.logs.filter(l => l.userId === this.currentUser.id);
-        
-        // LÓGICA PARA JORNADA DE HOY
         const todayStr = new Date().toLocaleDateString(); 
         const logsToday = uLogs.filter(l => new Date(l.timestamp).toLocaleDateString() === todayStr);
         
@@ -258,10 +269,12 @@ const app = {
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-emp');
         const paired = this.getPairedLogs(filtered);
         const isWorking = uLogs.length > 0 && uLogs[uLogs.length-1].type === 'ENTRADA';
+        
         document.getElementById('status-badge').innerText = isWorking ? 'TRABAJANDO' : 'FUERA';
         document.getElementById('status-badge').style.background = isWorking ? 'var(--success)' : 'var(--danger)';
         document.getElementById('btn-in').style.display = isWorking ? 'none' : 'block';
         document.getElementById('btn-out').style.display = isWorking ? 'block' : 'none';
+        
         document.getElementById('emp-history').innerHTML = paired.map(p => `
             <div class="user-row">
                 <b>📅 ${p.entry ? p.entry.time.split(',')[0] : p.exit.time.split(',')[0]}</b>
@@ -275,13 +288,16 @@ const app = {
         `).join('') || '<p style="margin-top:10px">Sin registros este mes.</p>';
     },
 
+    // renderAdminByEmployee: Lista los botones de cada empleado para ver su historial
     renderAdminByEmployee: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
         document.getElementById('admin-select-employee-list').innerHTML = emps.map(u => `<button class="btn-user-select" onclick="app.viewEmployeeDetail('${u.id}')">👤 ${u.name}</button>`).join('') || 'No hay empleados registrados.';
     },
 
+    // viewEmployeeDetail: Carga y muestra los fichajes de un empleado concreto para el admin
     viewEmployeeDetail: function(userId) {
         const user = this.users.find(u => u.id === userId);
+        if (!user) return;
         const uLogs = this.logs.filter(l => l.userId === userId);
         const filtered = this.filterLogsByMonth(uLogs, 'filter-date-admin-detail');
         const paired = this.getPairedLogs(filtered);
@@ -307,6 +323,7 @@ const app = {
         document.getElementById('admin-employee-detail-card').style.display = 'block';
     },
 
+    // renderAdminStatus: Muestra quién está actualmente fichado y quién no
     renderAdminStatus: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
         document.getElementById('admin-status-list').innerHTML = emps.map(u => {
@@ -322,7 +339,7 @@ const app = {
         }).join('') || 'Sin empleados.';
     },
 
-    // FUNCIÓN HISTORIAL GLOBAL AGRUPADO POR FECHA (FECHA EN NEGRO)
+    // renderAdminLogs: Muestra el historial de toda la empresa agrupado por día
     renderAdminLogs: function() {
         const filtered = this.filterLogsByMonth(this.logs, 'filter-date-admin-logs');
         const paired = this.getPairedLogs(filtered);
@@ -331,16 +348,11 @@ const app = {
         let lastDate = '';
 
         paired.forEach(p => {
-            // Obtenemos la fecha del registro actual
             const currentDate = p.entry ? p.entry.time.split(',')[0] : (p.exit ? p.exit.time.split(',')[0] : '--');
-            
-            // Si la fecha cambia, insertamos un encabezado de día (Color NEGRO)
             if (currentDate !== lastDate) {
                 html += `<div style="text-align:left; margin:15px 0 5px 5px; font-weight:bold; color:black; border-bottom:1px solid #ccc;">📅 Fecha: ${currentDate}</div>`;
                 lastDate = currentDate;
             }
-
-            // Añadimos la fila del empleado para ese día
             html += `
                 <div class="user-row">
                     <div style="display:flex; justify-content:space-between; align-items:center; width:100%">
@@ -359,30 +371,31 @@ const app = {
                 </div>
             `;
         });
-
         document.getElementById('admin-logs-list').innerHTML = html || '<p style="margin-top:10px">Sin datos este mes.</p>';
     },
 
+    // renderAdminUsers: Lista los empleados en el panel de gestión para editarlos/borrarlos
     renderAdminUsers: function() {
         const emps = this.users.filter(u => u.role !== 'admin');
         document.getElementById('admin-users-list').innerHTML = emps.map(u => `<div class="user-row" style="flex-direction:row; justify-content:space-between; align-items:center;"><div><b>${u.name}</b><br><small>ID: ${u.id}</small></div><div class="user-btns"><button class="btn-small btn-edit" onclick="app.editEmployee('${u.id}')">E</button><button class="btn-small btn-del" onclick="app.deleteEmployee('${u.id}')">X</button></div></div>`).join('') || 'Sin empleados.';
     },
 
+    // saveEmployee: Crea o actualiza un empleado individualmente en Firebase
     saveEmployee: function() {
         const name = document.getElementById('new-emp-name').value.trim();
         const pass = document.getElementById('new-emp-pass').value.trim();
         const editId = document.getElementById('edit-id').value;
         if(!name || !pass) return alert("Faltan datos");
-        if(editId){
-            const user = this.users.find(u => u.id === editId);
-            user.name = name; user.pass = pass;
-        } else {
-            const id = name.toLowerCase().replace(/\s+/g, '');
-            this.users.push({ id, name, role: 'employee', pass: pass });
-        }
-        this.saveData(); this.resetForm();
+        
+        let id = editId || name.toLowerCase().replace(/\s+/g, '');
+        const newUser = { id, name, role: 'employee', pass: pass };
+
+        db.ref('users/' + id).set(newUser).then(() => {
+            this.resetForm();
+        });
     },
 
+    // editEmployee: Carga los datos del empleado en el formulario de edición
     editEmployee: function(id) {
         const user = this.users.find(u => u.id === id);
         document.getElementById('form-title').innerText = "Editar empleado";
@@ -392,6 +405,7 @@ const app = {
         document.getElementById('btn-action-cancel').style.display = "block";
     },
 
+    // resetForm: Restablece el formulario de creación/edición de empleados
     resetForm: function() {
         document.getElementById('form-title').innerText = "Crear empleado";
         document.getElementById('edit-id').value = "";
@@ -400,13 +414,14 @@ const app = {
         document.getElementById('btn-action-cancel').style.display = "none";
     },
 
+    // deleteEmployee: Borra de forma individual a un usuario de Firebase
     deleteEmployee: function(id) {
         if(confirm("¿Borrar empleado?")){
-            this.users = this.users.filter(u => u.id !== id);
-            this.saveData(); 
+            db.ref('users/' + id).remove();
         }
     },
 
+    // downloadBackup: Genera un archivo JSON con todos los datos para respaldo local
     downloadBackup: function() {
         const data = { users: this.users, logs: this.logs };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -416,18 +431,19 @@ const app = {
         a.click();
     },
 
+    // importBackup: Sobrescribe la base de datos de Firebase con un archivo JSON externo
     importBackup: function(event) {
         const reader = new FileReader();
         reader.onload = (e) => {
             const data = JSON.parse(e.target.result);
             if (confirm("¿Sobrescribir datos de la NUBE?")) {
-                this.users = data.users; this.logs = data.logs;
-                this.saveData(); 
+                db.ref('/').set(data); 
             }
         };
         reader.readAsText(event.target.files[0]);
     },
 
+    // generateExcel: Genera el Excel del historial global filtrado por mes
     generateExcel: function() {
         const filterId = this.currentUser.role === 'admin' ? 'filter-date-admin-logs' : 'filter-date-emp';
         const filterVal = document.getElementById(filterId).value;
@@ -446,6 +462,7 @@ const app = {
         XLSX.writeFile(wb, `Fichajes_${filterVal || 'Historico'}.xlsx`);
     },
 
+    // generatePDF: Genera un PDF del historial global
     generatePDF: function() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -467,41 +484,34 @@ const app = {
             p.exit ? this.formatTimeDisplay(p.exit.time) : "En curso",
             p.exit ? this.formatDuration(p.duration) : "---"
         ]);
-
         doc.autoTable({ head, body, startY: 35 });
-
-        // AÑADIMOS LA FRASE DE DESCANSO EN EL PDF GLOBAL
         let finalY = doc.lastAutoTable.finalY + 10;
         doc.setFontSize(11);
         doc.setFont(undefined, 'bold');
         doc.text("*En este registro horario estan incluidos los 30 minutos de descanso.", 14, finalY);
-
         doc.save(`Fichajes_${filterVal || 'Historico'}.pdf`);
     },
 
+    // generateIndividualPDF: Genera un informe PDF profesional para firma de un empleado
     generateIndividualPDF: function(userId, inputFilterId) {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         const id = userId || document.getElementById('admin-employee-detail-card').dataset.currentUserDetail;
         const user = this.users.find(u => u.id === id);
         const filterVal = document.getElementById(inputFilterId).value;
-        
         const uLogs = this.logs.filter(l => l.userId === id);
         const filtered = this.filterLogsByMonth(uLogs, inputFilterId);
         const paired = this.getPairedLogs(filtered).reverse(); 
-
         let totalMs = 0;
 
         doc.setFontSize(16);
         doc.setTextColor(230, 126, 34); 
         doc.text("INFORME DE JORNADAS", 105, 15, { align: "center" });
-
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
         doc.text(`Empresa: Ecostruct S.L.`, 14, 25);
         doc.text(`CIF: B-19343441`, 14, 30);
         doc.text(`Centro: Oficina Principal`, 14, 35);
-
         doc.text(`Empleado: ${user.name}`, 120, 25);
         doc.text(`Nº Afiliación: ---`, 120, 30);
         doc.text(`Mes: ${filterVal}`, 120, 35);
@@ -517,57 +527,44 @@ const app = {
         });
 
         doc.autoTable({
-            head,
-            body,
-            startY: 45,
-            theme: 'grid',
+            head, body, startY: 45, theme: 'grid',
             headStyles: { fillColor: [44, 62, 80] }
         });
 
         let finalY = doc.lastAutoTable.finalY + 10;
-
-        // FRASE SOBRE TIEMPO DE DESCANSO
         doc.setFontSize(11);
         doc.setFont(undefined, 'bold');
         doc.text("*En este registro horario estan incluidos los 30 minutos de descanso.", 14, finalY);
-        
-        finalY += 10; // Bajamos la posición para el siguiente bloque
-
+        finalY += 10; 
         doc.setFontSize(10);
         doc.setFont(undefined, 'bolditalic');
         doc.text("RESUMEN:", 14, finalY);
         doc.setFont(undefined, 'normal');
         doc.text(`TOTAL TIEMPO TRABAJADO: ${this.formatDuration(totalMs)}`, 14, finalY + 7);
         doc.text(`TIEMPO TOTAL: ${this.formatDuration(totalMs)}`, 14, finalY + 14);
-
         finalY += 40;
         doc.text("Firma empleado:", 14, finalY);
         doc.text("__________________________", 14, finalY + 10);
-        
         doc.text("Firma y sello empresa:", 120, finalY);
         doc.text("__________________________", 120, finalY + 10);
-
         doc.save(`Informe_${user.name}_${filterVal}.pdf`);
     },
 
+    // generateIndividualExcel: Genera el mismo informe individual pero en Excel
     generateIndividualExcel: function(userId, inputFilterId) {
         const id = userId || document.getElementById('admin-employee-detail-card').dataset.currentUserDetail;
         const user = this.users.find(u => u.id === id);
         const filterVal = document.getElementById(inputFilterId).value;
-        
         const uLogs = this.logs.filter(l => l.userId === id);
         const filtered = this.filterLogsByMonth(uLogs, inputFilterId);
         const paired = this.getPairedLogs(filtered).reverse(); 
-
         let totalMs = 0;
 
         const rows = [
-            ["INFORME DE JORNADAS"],
-            [""],
+            ["INFORME DE JORNADAS"], [""],
             ["Empresa:", "Ecostruct S.L.", "", "Empleado:", user.name],
             ["CIF:", "B-19343441", "", "Nº Afiliación:", ""],
-            ["Centro de trabajo:", "Oficina Principal", "", "Intervalo:", filterVal],
-            [""],
+            ["Centro de trabajo:", "Oficina Principal", "", "Intervalo:", filterVal], [""],
             ["FECHA:", "ENTRADA:", "SALIDA:", "DURACIÓN:"], 
         ];
 
@@ -579,16 +576,7 @@ const app = {
             if(p.duration) totalMs += p.duration;
             rows.push([fecha, entrada, salida, duracion]);
         });
-
-        rows.push([""]);
-        rows.push(["TOTAL TIEMPO TRABAJADO:", this.formatDuration(totalMs)]);
-        rows.push([""]);
-        rows.push(["RESUMEN:"]);
-        rows.push(["TIEMPO TOTAL:", this.formatDuration(totalMs)]);
-        rows.push([""]);
-        rows.push([""]);
-        rows.push(["Firma empleado:", "", "", "Firma y sello empresa:"]);
-        rows.push(["__________________________", "", "", "__________________________"]);
+        rows.push([""], ["TOTAL TIEMPO TRABAJADO:", this.formatDuration(totalMs)], [""], ["RESUMEN:"], ["TIEMPO TOTAL:", this.formatDuration(totalMs)], [""], [""], ["Firma empleado:", "", "", "Firma y sello empresa:"], ["__________________________", "", "", "__________________________"]);
 
         const ws = XLSX.utils.aoa_to_sheet(rows);
         const wb = XLSX.utils.book_new();
